@@ -1,6 +1,10 @@
+CREATE TABLE IF NOT EXISTS prefix (
+    prefix TEXT PRIMARY KEY
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY, 
-    balance BIGINT NOT NULL DEFAULT 0, 
+    balance BIGINT NOT NULL DEFAULT 500, 
     tickets JSONB DEFAULT '[]' 
 );
 

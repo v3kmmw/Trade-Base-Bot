@@ -46,9 +46,9 @@ class Bot(commands.AutoShardedBot):
     async def get_prefix(self, message: discord.Message, /):
         if message.guild is None:
             return "="
-        prefix = await database.get_prefix(self.db, message.guild.id)
+        prefix = await database.get_prefix(self.db)
         if prefix is None:
-            await database.set_prefix(self.db, message.guild, "=")
+            await database.set_prefix(self.db, "=")
         return prefix if prefix else "="
 
 if __name__ == "__main__":

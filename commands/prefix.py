@@ -16,11 +16,13 @@ class Prefix(commands.Cog):
         embed = discord.Embed(description="### Prefix\n\n", color=discord.Color.dark_embed())
         if prefix and len(prefix) > 3:
             embed.description += "The prefix can't be longer than 3 characters!"
-        if prefix:
-            await database.set_prefix(self.bot.db, ctx.guild, prefix)
+            await ctx.send(embed=embed)
+            return
+        if prefix and len(prefix) < 5:
+            await database.set_prefix(self.bot.db, prefix)
             embed.description += f"The prefix has been set to ``{prefix}``"
         elif prefix is None:
-            prefix = await database.get_prefix(self.bot.db, ctx.guild.id)
+            prefix = await database.get_prefix(self.bot.db)
             if prefix:
                 embed.description += f"The prefix is currently set to ``{prefix}``"
             else:

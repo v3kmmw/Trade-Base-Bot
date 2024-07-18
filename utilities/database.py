@@ -1,58 +1,75 @@
 import aiosqlite
 
-async def get_prefix(db: aiosqlite.Connection, guild_id=None):
+async def get_prefix(db: aiosqlite.Connection):
     try:
         query = """
             SELECT prefix
-            FROM guilds
+            FROM prefix
         """
         params = ()
-        if guild_id is not None:
-            query += " WHERE id = ?"
-            params = (guild_id,)  
 
         async with db.execute(query, params) as cursor:
             rows = await cursor.fetchall()
             if rows:
                 return rows[0][0]
             else:
-                return '-'
+                return '='
     except Exception as e:
-        print(f"Error fetching guild prefix: {e}")
-        return '-'
+        return '='
 
-async def set_prefix(db: aiosqlite.Connection, guild, new_prefix: str):
-    print(f"Setting prefix for guild {guild.id} to {new_prefix}")
+async def set_prefix(db: aiosqlite.Connection, new_prefix: str):
     try:
-        # Check if the guild ID exists in the table
-        guild_id = guild.id
+        # Check if the prefix record exists
         check_query = """
-            SELECT id FROM guilds WHERE id = ?
+            SELECT prefix FROM prefix
         """
-        async with db.execute(check_query, (guild_id,)) as cursor:
+        async with db.execute(check_query) as cursor:
             row = await cursor.fetchone()
-        
+
         if row is None:
-            # Guild ID not found, insert a new record
+            # No prefix record found, insert a new one
             insert_query = """
-                INSERT INTO guilds (id, prefix)
-                VALUES (?, ?)
+                INSERT INTO prefix (prefix)
+                VALUES (?)
             """
-            insert_params = (guild_id, new_prefix)
+            insert_params = (new_prefix,)
+            await db.execute(insert_query, insert_params)
+        else:
+            # Prefix record found, update the existing one
+            update_query = """
+                UPDATE prefix
+                SET prefix = ?
+            """
+            update_params = (new_prefix,)
+            await db.execute(update_query, update_params)
+
+        await db.commit()
+        print(f"Prefix set to {new_prefix}")
+    except Exception as e:
+        print(f"Error updating prefix: {e}")
+        await db.rollback()
+
+async def add_user(db: aiosqlite.Connection, user_id: int):
+    try:
+        # Check if the user ID exists in the table
+        check_query = """
+            SELECT id FROM users WHERE id = ?
+        """
+        async with db.execute(check_query, (user_id,)) as cursor:
+            row = await cursor.fetchone()
+
+        if row is None:
+            # User ID not found, insert a new record
+            insert_query = """
+                INSERT INTO users (id, balance, tickets)
+                VALUES (?, 0, '[]')
+            """
+            insert_params = (user_id,)
             await db.execute(insert_query, insert_params)
             await db.commit()
-            print(f"Guild ID {guild_id} inserted with prefix {new_prefix}")
+            print(f"User ID {user_id} inserted with default balance and empty tickets")
         else:
-            # Guild ID found, update prefix
-            update_query = """
-                UPDATE guilds
-                SET prefix = ?
-                WHERE id = ?
-            """
-            update_params = (new_prefix, guild_id)
-            await db.execute(update_query, update_params)
-            await db.commit()
-            print(f"Prefix updated successfully for guild ID {guild_id}")
+            return 
     except Exception as e:
-        print(f"Error updating prefix for guild ID {guild_id}: {e}")
+        print(f"Error adding user ID {user_id}: {e}")
         await db.rollback()
