@@ -2,48 +2,79 @@ CREATE TABLE IF NOT EXISTS prefix (
     prefix TEXT PRIMARY KEY
 );
 
+CREATE TABLE IF NOT EXISTS claimcodes (
+    code TEXT PRIMARY KEY,
+    amount INTEGER,
+    owner TEXT
+);
+
+CREATE TABLE IF NOT EXISTS invitecodes (
+    code TEXT PRIMARY KEY,
+    creator TEXT,
+    uses INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    code INTEGER PRIMARY KEY AUTOINCREMENT, 
+    user_id INTEGER,
+    reporter INTEGER,
+    date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    proof TEXT DEFAULT '[]',
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT PRIMARY KEY, 
-    balance BIGINT NOT NULL DEFAULT 500, 
-    tickets JSONB DEFAULT '[]' 
+    id INTEGER PRIMARY KEY, 
+    balance INTEGER NOT NULL DEFAULT 500,
+    reports TEXT DEFAULT '[]',
+    invited_by INTEGER,
+    invites INTEGER NOT NULL,
+    fake_invites INTEGER NOT NULL,
+    tickets TEXT DEFAULT '[]',
+    FOREIGN KEY (invited_by) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS games (
-    id SERIAL PRIMARY KEY, 
-    name VARCHAR(50) NOT NULL, 
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    name TEXT NOT NULL, 
     description TEXT 
 );
 
 CREATE TABLE IF NOT EXISTS challenges (
-    id SERIAL PRIMARY KEY, 
-    challenger_id BIGINT REFERENCES users(id), 
-    challengee_id BIGINT REFERENCES users(id), 
-    game_id INT REFERENCES games(id), 
-    amount BIGINT NOT NULL, 
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    challenger_id INTEGER,
+    challengee_id INTEGER,
+    game_id INTEGER,
+    amount INTEGER NOT NULL, 
+    status TEXT NOT NULL DEFAULT 'pending', 
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (challenger_id) REFERENCES users(id),
+    FOREIGN KEY (challengee_id) REFERENCES users(id),
+    FOREIGN KEY (game_id) REFERENCES games(id)
 );
 
 CREATE TABLE IF NOT EXISTS transactions (
-    id SERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id),
-    amount BIGINT NOT NULL,
-    type VARCHAR(20) NOT NULL, 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    amount INTEGER NOT NULL,
+    type TEXT NOT NULL, 
     description TEXT, 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS roles (
-    id SERIAL PRIMARY KEY, 
-    name VARCHAR(50) NOT NULL, 
-    price BIGINT NOT NULL, 
-    perks JSONB 
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    name TEXT NOT NULL, 
+    price INTEGER NOT NULL, 
+    perks TEXT
 );
 
 CREATE TABLE IF NOT EXISTS chat_drops (
-    id SERIAL PRIMARY KEY, 
-    message_id BIGINT NOT NULL, 
-    user_id BIGINT REFERENCES users(id), 
-    amount BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    message_id INTEGER NOT NULL, 
+    user_id INTEGER,
+    amount INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );

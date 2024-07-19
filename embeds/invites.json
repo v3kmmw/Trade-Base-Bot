@@ -1,0 +1,63 @@
+{
+    "content": "",
+    "tts": false,
+    "embeds": [
+      {
+        "id": 166861547,
+        "description": "> -------------------------------------------------------\n> ### <:robux:1263270522251378719> | Going rate: ```20/1```\n> -------------------------------------------------------\n> Each inviter also receives roles based on their invites.\n> These roles grant perks throughout the server.\n> -------------------------------------------------------\n> ### Invite reward rules\n> <:number1:1261124887528079440> | No alts, you will be banned from rewards.\n> <:number2:1261124862433562715> | No [J4J](https://www.urbandictionary.com/define.php?term=j4j), This will result in a ban from rewards.\n> <:number3:1261124861431119903> | Members who leave do not count towards invites.\n> <:number4:1261124860088684555> | Minimum claim of 3 invites.",
+        "footer": {
+          "text": "To claim your invite rewards, open a support ticket.",
+          "icon_url": "https://message.style/cdn/images/d3158873b010dfc1baa3ff7310b30d03aaab929a06fc8535d2890f82060517cc.png"
+        },
+        "author": {
+          "name": "Invite Rewards | Click to claim.",
+          "url": "https://discord.com/channels/1260356563965841491/1260358246204575804",
+          "icon_url": "https://message.style/cdn/images/5cd1ad03b65f92f3612ca4678d7ed029e0908ed33b4e313416f7079a43abd219.png"
+        },
+        "thumbnail": {
+          "url": "https://message.style/cdn/images/699598ce9c116c403f37b87680028a0a996a326bc6402fd49e3ed83c9687b1bd.png"
+        },
+        "fields": []
+      }
+    ],
+    "components": [
+      {
+        "id": 346825820,
+        "type": 1,
+        "components": [
+          {
+            "id": 552461932,
+            "type": 2,
+            "style": 2,
+            "label": "Dont know how to make a custom invite?",
+            "emoji": null,
+            "disabled": true,
+            "action_set_id": "632786711"
+          },
+          {
+            "id": 511957542,
+            "type": 2,
+            "style": 5,
+            "label": "Click here.",
+            "emoji": null,
+            "url": "https://v3kmmw.github.io/JBTB/custominvite.html",
+            "disabled": false,
+            "action_set_id": ""
+          }
+        ]
+      }
+    ],
+    "actions": {
+      "23287062": {
+        "actions": []
+      },
+      "632786711": {
+        "actions": []
+      },
+      "": {
+        "actions": []
+      }
+    },
+    "avatar_url": "https://cdn.discordapp.com/avatars/1263275697213018122/d22a7597a5d8973fed6d26878035ef17.png",
+    "username": "Jailbreak Trade Base"
+  }

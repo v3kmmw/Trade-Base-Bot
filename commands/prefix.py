@@ -8,7 +8,7 @@ class Prefix(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.hybrid_command(description="View or set the bot's prefix")
+    @commands.command(description="View or set the bot's prefix")
     async def prefix(self, ctx: commands.Context, prefix: str = None):
         if not (ctx.author.guild_permissions.manage_guild or ctx.author.guild_permissions.administrator):
             await ctx.send("You don't have permission to use this command.")

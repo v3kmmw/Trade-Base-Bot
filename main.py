@@ -1,11 +1,11 @@
 import discord
 import asyncio
 from bot import Bot
-import discord
+import threading
 from utilities import database
 from discord.ext import commands
+from utilities import api
 import aiosqlite
-
 bot: Bot = Bot()
 
 async def on_error(ctx, error: commands.CommandError):
@@ -28,11 +28,12 @@ async def on_message(message):
     if not message.author.bot:
         await bot.process_commands(message)
 
-
 async def run_bot() -> None:
     bot.on_command_error = on_error
     await bot.start()
     
 
 if __name__ == "__main__":
+    flask_thread = threading.Thread(target=api.start)
+    flask_thread.start()
     asyncio.run(run_bot())

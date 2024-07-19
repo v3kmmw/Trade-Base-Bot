@@ -8,12 +8,12 @@ class Sync(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.hybrid_command(description="Sync the bot")
+    @commands.command(description="Sync the bot | Owner only")
     @commands.is_owner()
     async def sync(self, ctx: commands.Context):
         await self.bot.tree.sync()
         embed = discord.Embed(
-            title="Commands Syned!",
+            title="Commands Synced!",
             description=f"**Synced in:**```{int(self.bot.latency * 1000)}ms```",
             color=discord.Color.dark_embed(),
         )

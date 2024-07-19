@@ -7,7 +7,7 @@ class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.hybrid_command(description="Set the bot's status")
+    @commands.command(description="Set the bot's status")
     @commands.is_owner()
     async def status(self, ctx: commands.Context, activity_type: str = None, *, status: str = None):
         if not activity_type or not status:
