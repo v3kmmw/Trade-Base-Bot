@@ -15,7 +15,7 @@ class Sync(commands.Cog):
         embed = discord.Embed(
             title="Commands Synced!",
             description=f"**Synced in:**```{int(self.bot.latency * 1000)}ms```",
-            color=discord.Color.dark_embed(),
+            color=ctx.author.color,
         )
         embed.set_footer(text="You may have to reload!", icon_url='https://images-ext-1.discordapp.net/external/rdU89nT2Hzp3k4H9r7muDFY2dy_9f9sYAt9zdZhwrZg/https/message.style/cdn/images/52d3a3e1279e5f9372d8c1ebd2f159f37e20232a6c61580254b6ce8b10aaba20.png')
 

@@ -6,6 +6,7 @@ from utilities import database
 from discord.ext import commands
 from utilities import api
 import aiosqlite
+from discord.ext import tasks
 bot: Bot = Bot()
 
 async def on_error(ctx, error: commands.CommandError):
@@ -27,6 +28,7 @@ async def on_message(message):
     # Process commands if the message is not from the bot itself
     if not message.author.bot:
         await bot.process_commands(message)
+
 
 async def run_bot() -> None:
     bot.on_command_error = on_error

@@ -13,7 +13,7 @@ class Prefix(commands.Cog):
         if not (ctx.author.guild_permissions.manage_guild or ctx.author.guild_permissions.administrator):
             await ctx.send("You don't have permission to use this command.")
             return
-        embed = discord.Embed(description="### Prefix\n\n", color=discord.Color.dark_embed())
+        embed = discord.Embed(description="### Prefix\n\n", color=ctx.author.color)
         if prefix and len(prefix) > 3:
             embed.description += "The prefix can't be longer than 3 characters!"
             await ctx.send(embed=embed)

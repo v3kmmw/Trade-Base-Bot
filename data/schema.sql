@@ -14,8 +14,19 @@ CREATE TABLE IF NOT EXISTS invitecodes (
     uses INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS reportverification (
+    code TEXT PRIMARY KEY, 
+    status text DEFAULT NULL,
+    reporter INTEGER,
+    scammer TEXT DEFAULT '[]',
+    public BOOLEAN DEFAULT FALSE,
+    message_link TEXT DEFAULT NULL,
+    proof TEXT DEFAULT NULL,
+    date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS reports (
-    code INTEGER PRIMARY KEY AUTOINCREMENT, 
+    code INTEGER PRIMARY KEY, 
     user_id INTEGER,
     reporter INTEGER,
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

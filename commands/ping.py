@@ -11,10 +11,11 @@ class Ping(commands.Cog):
     @commands.hybrid_command(description="Shows the latency of the bot")
     async def ping(self, ctx: commands.Context):
         embed = discord.Embed(
-            title="🏓 Pong!",
             description=f"```{int(self.bot.latency * 1000)}ms```",
-            color=discord.Color.dark_embed(),
+            color=ctx.author.color,
         )
+        embed.set_author(name=f"Ping | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+
 
         await ctx.send(embed=embed)
 
