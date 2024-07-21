@@ -1,0 +1,7 @@
+discord.py
+aiosqlite
+shortuuid
+Flask[async]
+Flask-Cors
+aiohttp
+cogwatch

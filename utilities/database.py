@@ -238,9 +238,6 @@ async def sync_invites(db: aiosqlite.Connection, invites):
         print(f"Error synchronizing invites: {e}")
         await db.rollback()
 
-async def add_report(db: aiosqlite.Connection, Report):
-    print("Invites synchronized successfully")
-
 async def update_pending_proof_public(db: aiosqlite.Connection, code, public):
     try:
         query = """
@@ -317,7 +314,94 @@ async def verify_report(db: aiosqlite.Connection, code: str):
     except Exception as e:
         print(f"Error verifying report: {e}")
         return False, None
+    
+async def get_scammer(db: aiosqlite.Connection, scammer: str):
+    try:
+        query = """
+            SELECT code, status, reporter, scammer, public, message_link, proof, date
+            FROM reports
+            WHERE scammer = ?
+        """
+        params = (scammer,)
+        async with db.execute(query, params) as cursor:
+            result = await cursor.fetchall()
+            if not result:
+                print("Scammer does not exist in reports table.")
+                return None
+            # Create a list of dictionaries for each report
+            reports = [
+                {
+                    'code': row[0],
+                    'status': row[1],
+                    'reporter': row[2],
+                    'scammer': row[3],
+                    'public': row[4],
+                    'message_link': row[5],
+                    'proof': json.loads(row[6]),
+                    'date': row[7]
+                }
+                for row in result
+            ]
+            return reports
+    except Exception as e:
+        print(f"Error fetching scammer: {e}")
+        return None
 
+async def get_report(db: aiosqlite.Connection, code: str):
+    try:
+        query = """
+            SELECT code, status, reporter, scammer, public, message_link, proof, date
+            FROM reports
+            WHERE code = ?
+        """
+        params = (code,)
+        async with db.execute(query, params) as cursor:
+            result = await cursor.fetchone()
+            if result is None:
+                print("Code does not exist in reports table.")
+                return False
+            return {
+                'code': result[0],
+                'status': result[1],
+                'reporter': result[2],
+               'scammer': result[3],
+                'public': result[4],
+               'message_link': result[5],
+                'proof': json.loads(result[6]),
+                'date': result[7]
+            }
+    except Exception as e:
+        print(f"Error fetching report: {e}")
+        return None
+        
+
+async def create_report(db: aiosqlite.Connection, code: str):
+    try:
+        # Check if the code exists in the reportverification table and get the associated data
+        query = """
+            SELECT code, status, reporter, scammer, public, message_link, proof, date
+            FROM reportverification
+            WHERE code = ?
+        """
+        params = (code,)
+        async with db.execute(query, params) as cursor:
+            result = await cursor.fetchone()
+            if result is None:
+                print("Code does not exist in reportverification table.")
+                return False
+
+        # Insert the retrieved data into the reports table
+        insert_query = """
+            INSERT INTO reports (code, status, reporter, scammer, public, message_link, proof, date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        await db.execute(insert_query, result)
+        await db.commit()
+        return True
+
+    except Exception as e:
+        print(f"Error creating report: {e}")
+        return False
 
 
 async def create_code(db: aiosqlite.Connection, user, amount):

@@ -11,6 +11,10 @@ class SupportView(View):
 
 
 
+    
+
+
+
     @discord.ui.button(label="Commands", style=discord.ButtonStyle.gray, disabled=False, row=1, emoji='<:list:1264028674592608327>')
     async def commands(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.author:
@@ -73,5 +77,15 @@ class Help(commands.Cog):
 
         await ctx.send(embed=embed, view=view)
 
+    @commands.hybrid_command(description="Get a list of commands")
+    async def commands(self, ctx: commands.Context):
+        embed = discord.Embed(
+            description=f"What do you need assistance with?",
+            color=ctx.author.color,
+        )
+        embed.set_author(name=f"Help | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        view = SupportView(author=ctx.author)
+
+        await ctx.send(embed=embed, view=view)
 async def setup(bot):
     await bot.add_cog(Help(bot))

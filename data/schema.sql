@@ -14,10 +14,18 @@ CREATE TABLE IF NOT EXISTS invitecodes (
     uses INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS embeds (
+    name TEXT PRIMARY KEY, 
+    id INTEGER,
+    embed TEXT DEFAULT NULL,
+    buttons TEXT DEFAULT '[]',
+    author INTEGER DEFAULT NULL
+);
+
 CREATE TABLE IF NOT EXISTS reportverification (
     code TEXT PRIMARY KEY, 
-    status text DEFAULT NULL,
-    reporter INTEGER,
+    status TEXT DEFAULT NULL,
+    reporter INTEGER, 
     scammer TEXT DEFAULT '[]',
     public BOOLEAN DEFAULT FALSE,
     message_link TEXT DEFAULT NULL,
@@ -26,12 +34,14 @@ CREATE TABLE IF NOT EXISTS reportverification (
 );
 
 CREATE TABLE IF NOT EXISTS reports (
-    code INTEGER PRIMARY KEY, 
-    user_id INTEGER,
+    code TEXT PRIMARY KEY, 
+    status TEXT DEFAULT NULL,
     reporter INTEGER,
-    date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    proof TEXT DEFAULT '[]',
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    scammer TEXT DEFAULT NULL,
+    public BOOLEAN DEFAULT FALSE,
+    message_link TEXT DEFAULT NULL,
+    proof TEXT DEFAULT NULL,
+    date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -39,8 +49,8 @@ CREATE TABLE IF NOT EXISTS users (
     balance INTEGER NOT NULL DEFAULT 500,
     reports TEXT DEFAULT '[]',
     invited_by INTEGER,
-    invites INTEGER NOT NULL,
-    fake_invites INTEGER NOT NULL,
+    invites INTEGER NOT NULL DEFAULT 0,
+    fake_invites INTEGER NOT NULL DEFAULT 0,
     tickets TEXT DEFAULT '[]',
     FOREIGN KEY (invited_by) REFERENCES users(id)
 );
