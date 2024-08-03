@@ -1,3 +1,4 @@
 
 data/config.toml
+data/database.db
 utilities/api.py
