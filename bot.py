@@ -55,7 +55,7 @@ class Bot(commands.AutoShardedBot):
 
     async def start(self) -> None:
         discord.utils.setup_logging(level=logging.INFO)
-        await super().start(config.BOT_TOKEN, reconnect=True)
+        await super().start(config.TEST_TOKEN, reconnect=True)
 
     async def get_prefix(self, message: discord.Message, /):
         if message.guild is None:
