@@ -12,7 +12,7 @@ class Status(commands.Cog):
     async def status(self, ctx: commands.Context, activity_type: str = None, *, status: str = None):
         if not activity_type or not status:
             valid_activity_types = ['playing', 'streaming', 'listening', 'watching']
-            await ctx.send(f"Usage: `!status <activity_type> <status_message> [silent]`\nValid activity types: {', '.join(valid_activity_types)}")
+            await ctx.send(f"Usage: `status <activity_type> <status_message> [silent]`\nValid activity types: {', '.join(valid_activity_types)}")
             return
         
         # Check for silent flag
