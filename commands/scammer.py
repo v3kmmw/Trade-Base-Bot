@@ -6,6 +6,16 @@ import shortuuid
 import asyncio
 import config 
 import time
+from datetime import datetime
+
+class ReportSent(View):
+    def __init__(self):
+        super().__init__()
+
+
+    @discord.ui.button(label="Report sent!", style=discord.ButtonStyle.green, disabled=True, row=1)
+    async def sent(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print("Sent")
 
 class SendReport(View):
     def __init__(self, bot, author, message, code):
@@ -32,7 +42,8 @@ class SendReport(View):
         embed.set_author(name=f"Scam Report Created", icon_url=interaction.user.avatar.url)
         await log_channel.send(embed=embed)
         await self.message.edit(view=None)
-        await interaction.response.send_message("Report sent!")
+        view = ReportSent()
+        await interaction.response.edit_message(view=view)
 
 class ProofView(View):
     def __init__(self, author, code):
@@ -93,15 +104,19 @@ class ConfirmReport(View):
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green, row=1)
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await database.update_pending_proof_public(self.bot.db, self.code, 1)
+        message = self.message
+        embeds = message.embeds
+        await interaction.response.edit_message(embeds=embeds)
         await self.update_embed(self.message, self.code)
-        await interaction.response.send_message("The report has been made public.", ephemeral=True)
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.red, row=1)
     async def deny_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await database.update_pending_proof_public(self.bot.db, self.code, 0)
+        message = self.message
+        embeds = message.embeds
+        await interaction.response.edit_message(embeds=embeds)
         await self.update_embed(self.message, self.code)
-        await interaction.response.send_message("You chose not to make this report public.", ephemeral=True)
-
+        
 class Scammer(commands.Cog):
     """Command to report, search, or delete scammers."""
     def __init__(self, bot):
@@ -148,6 +163,8 @@ class Scammer(commands.Cog):
     @tasks.loop(seconds=1)
     async def check_reports(self):
         reports_to_check = list(self.updated_reports)
+        cached_message_ids = set()
+        cached_messages = []
         for code in reports_to_check:
             report = await database.get_report_verification(self.bot.db, code)
             if report is None:
@@ -161,12 +178,21 @@ class Scammer(commands.Cog):
                 continue
 
             try:
-                message = await self.bot.get_channel(channel_id).fetch_message(message_id)
+                if message_id in cached_message_ids:
+                    message = next((msg for msg in cached_messages if msg.id == message_id), None)
+                else:
+                    message = await self.bot.get_channel(channel_id).fetch_message(message_id)
+                    cached_message_ids.add(message_id)
+                    cached_messages.append(message)
+
+
+
                 if len(message.embeds) < 2:
                     print("Message does not have two embeds")
                     continue
 
                 status_embed = message.embeds[1]
+                previous_description = status_embed.description
                 if 'Proof Status' not in status_embed.description:
                     status_embed.description += "\nProof Status: " + f"``{report['status']}``"
                 else:
@@ -174,6 +200,9 @@ class Scammer(commands.Cog):
                     lines = [line for line in lines if not line.startswith("Proof Status:")]
                     lines.append("Proof Status: " + f"``{report['status']}``")
                     status_embed.description = "\n".join(lines)
+
+                if status_embed.description == previous_description:
+                    continue
 
                 await message.edit(embeds=message.embeds)
 
@@ -226,18 +255,24 @@ class Scammer(commands.Cog):
             color=ctx.author.color,
         )
         code_embed.set_author(name=f"Scammer Report | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
-
-
+        description = ""
+        if scammer.startswith('<@'):
+            description += f"Scammer: {scammer}"
+            print(f"{description}")
+        elif isinstance(scammer, str):
+            description += f"Scammer: ``{scammer}``"
         embed = discord.Embed(
-            description=f"Scammer: ``{scammer}``",
+            description=description,
             color=ctx.author.color,
-        )
+        ) 
         view = ProofView(author=ctx.author, code=proof_code)
         view.add_item(discord.ui.Button(label="Click Here to Upload", style=discord.ButtonStyle.link, url="https://jbtradebase.xyz/upload", row=1))
         embed.set_footer(text=f"Please upload your proof on the website the button redirects you to.")
         embed.set_author(name=f"Scammer Report | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         embeds = [code_embed, embed]
         message = await ctx.send(embeds=embeds, view=view)
+        if scammer == discord.Member:
+            scammer = scammer.id
         await database.create_report_verification(self.bot.db, code=proof_code, status="Pending Upload", reporter=ctx.author.id, scammer=scammer, public=False, message_link=message.jump_url)
 
         self.updated_reports.add(proof_code)  # Add the report code to track
@@ -262,7 +297,7 @@ class Scammer(commands.Cog):
             embed.set_footer(text="For a more broad search, try searching the name of the scammer.", icon_url="https://cdn.discordapp.com/attachments/1263603660261429511/1264337093820154019/Rolling1x-1.0s-200px-200px.gif?ex=669d812d&is=669c2fad&hm=4457abe52511b8120f0d3eff113a6dee1c1ef64a35d65179d175988b45a3f9f1&")
             message = await ctx.send(embed=embed)
             await asyncio.sleep(2)
-            report = await database.get_report(self.bot.db, search_by)
+            report = await database.get_report(self.bot.db, search)
             if not report:
                 embed.description = "No results found for this code"
                 embed.set_footer(text=None, icon_url=None)
@@ -272,6 +307,20 @@ class Scammer(commands.Cog):
             embed.set_footer(text="Please wait...", icon_url="https://cdn.discordapp.com/attachments/1263603660261429511/1264337093820154019/Rolling1x-1.0s-200px-200px.gif?ex=669d812d&is=669c2fad&hm=4457abe52511b8120f0d3eff113a6dee1c1ef64a35d65179d175988b45a3f9f1&")
             await message.edit(embed=embed)
             await asyncio.sleep(2)
+            embed.set_author(name=f"Scammer Search Results | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            embed.description = f"code: ``{report['code']}``\n scammer: ``{report['scammer']}``\n\n **__Proof__**"
+            embed_description_lines = embed.description.split("\n") if embed.description else []
+            proof = report['proof']
+            cleaned_proof = [url.strip().strip('[]').strip('"') for url in proof if isinstance(url, str)]
+            for index, proof_url in enumerate(cleaned_proof, start=1):
+                embed_description_lines.append(f"[Proof {index}]({proof_url})")
+
+            embed.description = "\n".join(embed_description_lines)
+            embed.set_footer(text="Submitted at:")
+            date_string = report['date']
+            date_object = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+            embed.timestamp = date_object
+            await message.edit(embed=embed)
         elif search_by == "name":
             if not search:
                 embed.description = "Please provide a scammers name"

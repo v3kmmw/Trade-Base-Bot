@@ -44,17 +44,34 @@ CREATE TABLE IF NOT EXISTS reports (
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY, 
-    balance INTEGER NOT NULL DEFAULT 500,
-    reports TEXT DEFAULT '[]',
-    invited_by INTEGER,
-    invites INTEGER NOT NULL DEFAULT 0,
-    fake_invites INTEGER NOT NULL DEFAULT 0,
-    tickets TEXT DEFAULT '[]',
-    FOREIGN KEY (invited_by) REFERENCES users(id)
+CREATE TABLE IF NOT EXISTS unlockable_roles (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    requirement TEXT NOT NULL,
+    requirement_type TEXT NOT NULL
 );
 
+    
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    balance INTEGER NOT NULL DEFAULT 500,
+    username TEXT UNIQUE,
+    profile_color TEXT DEFAULT '#DEFAULT_COLOR',
+    embed_image TEXT,
+    premium BOOLEAN DEFAULT FALSE,
+    message_streak INTEGER DEFAULT 0,
+    linked_roblox_account TEXT,
+    crew_id INTEGER REFERENCES crews(id),
+    vouches INTEGER DEFAULT 0,
+    scammer_reports INTEGER DEFAULT 0,
+    reports TEXT DEFAULT '[]',
+    tickets TEXT DEFAULT '[]',
+    invited_by INTEGER REFERENCES users(id),
+    invites INTEGER NOT NULL DEFAULT 0,
+    fake_invites INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (invited_by) REFERENCES users(id)
+);
 CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     name TEXT NOT NULL, 
@@ -89,6 +106,41 @@ CREATE TABLE IF NOT EXISTS roles (
     name TEXT NOT NULL, 
     price INTEGER NOT NULL, 
     perks TEXT
+);
+
+CREATE TABLE IF NOT EXISTS automod (
+    type TEXT NOT NULL DEFAULT 'AI',
+    minimum_sexual REAL NOT NULL,
+    enable_sexual INTEGER NOT NULL DEFAULT 1,
+    minimum_hate REAL NOT NULL,
+    enable_hate INTEGER NOT NULL DEFAULT 1,
+    minimum_harassment REAL NOT NULL,
+    enable_harassment INTEGER NOT NULL DEFAULT 1,
+    minimum_self_harm REAL NOT NULL,
+    enable_self_harm INTEGER NOT NULL DEFAULT 1,
+    minimum_sexual_minors REAL NOT NULL,
+    enable_sexual_minors INTEGER NOT NULL DEFAULT 1,
+    minimum_hate_threatening REAL NOT NULL,
+    enable_hate_threatening INTEGER NOT NULL DEFAULT 1,
+    minimum_violence_graphic REAL NOT NULL,
+    enable_violence_graphic INTEGER NOT NULL DEFAULT 1,
+    minimum_self_harm_intent REAL NOT NULL,
+    enable_self_harm_intent INTEGER NOT NULL DEFAULT 1,
+    minimum_self_harm_instructions REAL NOT NULL,
+    enable_self_harm_instructions INTEGER NOT NULL DEFAULT 1,
+    minimum_harassment_threatening REAL NOT NULL,
+    enable_harassment_threatening INTEGER NOT NULL DEFAULT 1,
+    minimum_violence REAL NOT NULL,
+    enable_violence INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS automod_logs (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    model TEXT,
+    type TEXT NOT NULL, 
+    content TEXT NOT NULL,
+    reason TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS chat_drops (

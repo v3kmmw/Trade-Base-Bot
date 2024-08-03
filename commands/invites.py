@@ -10,6 +10,7 @@ class Invites(commands.Cog):
     
     @commands.hybrid_command(description="Get your invites")
     async def invites(self, ctx: commands.Context, user: discord.Member = None):
+        await ctx.defer()
         if user is None:
             user = ctx.author
         invites = await ctx.guild.invites()
@@ -36,6 +37,7 @@ class Invites(commands.Cog):
                 total_invites += invite.uses
 
         total_invites += fake_invites
+        await database.update_user(self.bot.db, user.id, invites=total_invites)
 
         embed.add_field(name=f"Code Invites:", value=f"<:invite:1263623373112475800> {total_real_invites}", inline=True)
         embed.add_field(name=f"Fake (Added) Invites:", value=f"<:invite:1263623373112475800> {fake_invites}", inline=True)

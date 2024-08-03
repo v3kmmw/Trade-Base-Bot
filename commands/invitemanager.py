@@ -8,6 +8,7 @@ class InviteManagement(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(description="Add or remove invites")
+    @commands.is_owner()
     async def manageinvites(self, ctx: commands.Context, action: str = None, amount: int = None, user: discord.User = None):
         """
         Command to add or remove invites.

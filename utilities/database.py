@@ -2,7 +2,8 @@ import aiosqlite
 import shortuuid
 import discord
 import json
-from typing import List
+from typing import List, Dict, Any
+from discord.ext import commands
 
 async def get_prefix(db: aiosqlite.Connection):
     try:
@@ -61,18 +62,32 @@ async def add_user(db: aiosqlite.Connection, user_id: int, invited_by: int = Non
         """
         async with db.execute(check_query, (user_id,)) as cursor:
             row = await cursor.fetchone()
-
         if row is None:
             # Default values for new users
             balance = 500
+            username = None
+            profile_color = '#DEFAULT_COLOR'
+            embed_image = None
+            premium = False
+            message_streak = 0
+            linked_roblox_account = None
+            crew_id = None
+            vouches = 0
+            scammer_reports = 0
+            reports = '[]'
+            tickets = '[]'
             invites = 0
             fake_invites = 0
-            tickets = '[]'
+
             insert_query = """
-                INSERT INTO users (id, balance, invited_by, invites, fake_invites, tickets)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO users (id, username, balance, profile_color, embed_image, premium, 
+                                   message_streak, linked_roblox_account, crew_id, vouches, 
+                                   scammer_reports, reports, tickets, invited_by, invites, fake_invites)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            insert_params = (user_id, balance, invited_by, invites, fake_invites, tickets)
+            insert_params = (user_id, username, balance, profile_color, embed_image, premium,
+                             message_streak, linked_roblox_account, crew_id, vouches,
+                             scammer_reports, reports, tickets, invited_by, invites, fake_invites)
             await db.execute(insert_query, insert_params)
             await db.commit()
             print(f"User ID {user_id} inserted with default values.")
@@ -86,41 +101,135 @@ async def add_user(db: aiosqlite.Connection, user_id: int, invited_by: int = Non
 async def get_user(db: aiosqlite.Connection, user: discord.User):
     try:
         query = """
-            SELECT balance, invited_by, invites, fake_invites, tickets
+            SELECT id, username, balance, invited_by, invites, fake_invites,
+                   profile_color, embed_image, premium, message_streak, linked_roblox_account,
+                   crew_id, vouches, scammer_reports, tickets, reports
             FROM users
-            WHERE id = ?
+            WHERE id = ?;
         """
-        params = (user.id,)
-
-        async with db.execute(query, params) as cursor:
+        async with db.execute(query, (user.id,)) as cursor:
             row = await cursor.fetchone()
-
         if row is None:
-            print(f"User ID {user.id} not found.")
             return None
-
-        # Unpack the row data
-        balance, invited_by, invites, fake_invites, tickets = row
-
-        # Optionally process or return the data as a dictionary or a custom object
+        # Use column names for clarity
         user_data = {
-            'id': user.id,
-            'balance': balance,
-            'invited_by': invited_by,
-            'invites': invites,
-            'fake_invites': fake_invites,
-            'tickets': tickets
+            'id': row[0],
+            'username': row[1],
+            'balance': row[2],
+            'invited_by': row[3],
+            'invites': row[4],
+            'fake_invites': row[5],
+            'profile_color': row[6],
+            'embed_image': row[7],
+            'premium': row[8],
+            'message_streak': row[9],
+            'linked_roblox_account': row[10],
+            'crew_id': row[11],
+            'vouches': row[12],
+            'scammer_reports': row[13],
+            'tickets': json.loads(row[14]) if row[14] else [],
+            'reports': json.loads(row[15]) if row[15] else []
         }
-
         return user_data
-
     except Exception as e:
         print(f"Error retrieving user ID {user.id}: {e}")
         return None
+    
+async def create_unlockable_role(bot: commands.Bot, db: aiosqlite.Connection, name: str, color: discord.Color, requirement: str, requirement_type: str) -> int:
+    try:
+        # You can use bot here if needed, for example:
+        guild = await bot.fetch_guild(1216546896491843664)
+        discord_role = await guild.create_role(name=name, color=color)
 
+        query = """
+            INSERT INTO unlockable_roles (id, name, requirement, requirement_type)
+            VALUES (?, ?, ?, ?)
+        """
+        async with db.execute(query, (discord_role.id, name, requirement, requirement_type)) as cursor:
+            await db.commit()
+            return discord_role
+    except Exception as e:
+        print(f"Error creating unlockable role: {e}")
+        await db.rollback()
+        return None
+
+async def get_unlockable_roles(db: aiosqlite.Connection) -> List[Dict[str, Any]]:
+    try:
+        query = """
+            SELECT id, name, requirement, requirement_type
+            FROM unlockable_roles
+        """
+        async with db.execute(query) as cursor:
+            rows = await cursor.fetchall()
+            columns = [column[0] for column in cursor.description]
+            return [dict(zip(columns, row)) for row in rows]
+    except Exception as e:
+        print(f"Error retrieving unlockable roles: {e}")
+        return []
+    
+async def delete_unlockable_role(db: aiosqlite.Connection, role_id):
+    try:
+        query = """
+            DELETE FROM unlockable_roles WHERE id = ?
+        """
+        async with db.execute(query, (role_id,)) as cursor:
+            await db.commit()
+            print(f"Unlockable role with ID {role_id} deleted")
+    except Exception as e:
+        print(f"Error deleting unlockable role with ID {role_id}: {e}")
+        await db.rollback()
+    
+async def handle_role_check(db: aiosqlite.Connection, user, bot: commands.Bot):
+    try:
+        db_user = await get_user(db, user)
+        added_roles = []
+        if user is None:
+            return
+        roles = await get_unlockable_roles(db)
+        guild = await bot.fetch_guild(1216546896491843664)
+
+        for role in roles:
+            discord_role = guild.get_role(int(role['id']))  # Fetch the role once per iteration
+            if not discord_role:
+                await delete_unlockable_role(db, role['id'])
+                continue
+
+            if role['requirement_type'] == 'balance' and db_user['balance'] >= int(role['requirement']):
+                if discord_role not in user.roles:
+                    await user.add_roles(discord_role)
+                    added_roles.append(discord_role)
+            elif role['requirement_type'] == 'vouches' and db_user['vouches'] >= int(role['requirement']):
+                print(discord_role.name)
+                # Add role handling logic if needed
+            elif role['requirement_type'] == 'messages':
+                print(discord_role.name)
+                # Add role handling logic if needed
+
+        return added_roles
+    
+    except Exception as e:
+        print(f"Error handling role check for User ID {user.id}: {e}")
+        return None
+        
 
 async def update_user(db: aiosqlite.Connection, user_id: int, **kwargs):
     try:
+        # Check if the user exists
+        check_query = "SELECT id FROM users WHERE id = ?"
+        async with db.execute(check_query, (user_id,)) as cursor:
+            if await cursor.fetchone() is None:
+                print(f"User ID {user_id} does not exist.")
+                return False
+
+        # Validate input: ensure all keys in kwargs are valid column names
+        valid_columns = {'balance', 'username', 'profile_color', 'embed_image', 'premium',
+                         'message_streak', 'linked_roblox_account', 'crew_id', 'vouches',
+                         'scammer_reports', 'reports', 'tickets', 'invited_by', 'invites',
+                         'fake_invites'}
+        if not all(key in valid_columns for key in kwargs.keys()):
+            print(f"Invalid column name in update request for User ID {user_id}")
+            return False
+
         # Create a list of columns to update and their new values
         set_clause = ", ".join(f"{column} = ?" for column in kwargs.keys())
         params = list(kwargs.values())
@@ -132,15 +241,14 @@ async def update_user(db: aiosqlite.Connection, user_id: int, **kwargs):
             SET {set_clause}
             WHERE id = ?
         """
-
         async with db.execute(query, params) as cursor:
             await db.commit()
-
         print(f"User ID {user_id} updated with values: {kwargs}")
-
+        return True
     except Exception as e:
         print(f"Error updating user ID {user_id}: {e}")
         await db.rollback()
+        return False
 
 async def create_scammer_report(db: aiosqlite.Connection, user_id: int, reporter: int, proof: List[str]):
     try:
@@ -178,7 +286,6 @@ async def create_report_verification(db: aiosqlite.Connection, **kwargs):
             await cursor.execute(query, values)
         
         await db.commit()
-        print(f"Report created with values: {kwargs}")
 
     except Exception as e:
         print(f"Error creating report: {e}")

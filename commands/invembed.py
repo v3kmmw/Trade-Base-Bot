@@ -8,8 +8,12 @@ class SendInviteEmbed(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group()
+    @commands.group()
+    @commands.is_owner()
     async def embed(self, ctx: commands.Context):
+        """
+        Command to add or remove embeds from the bot.
+        """
         usage_embed = discord.Embed(
             title="Embed Command Usage",
             description=(
@@ -28,12 +32,14 @@ class SendInviteEmbed(commands.Cog):
 
 
     @embed.command()
+    @commands.is_owner()
     async def send(self, ctx: commands.Context, embed: Optional[str] = None):
         if embed is None:
             print("G")
             return
 
     @embed.command()
+    @commands.is_owner()
     async def save(self, ctx: commands.Context):
         print("")
 

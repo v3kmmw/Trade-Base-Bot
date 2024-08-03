@@ -5,3 +5,4 @@ Flask[async]
 Flask-Cors
 aiohttp
 cogwatch
+openai
