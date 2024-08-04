@@ -9,7 +9,7 @@ from discord.ext import tasks
 from utilities.heartbeat import bot_status
 import time
 from help import HelpCommand
-
+from utilities import control
 
 class Bot(commands.AutoShardedBot):
     db: aiosqlite.Connection
@@ -19,7 +19,7 @@ class Bot(commands.AutoShardedBot):
     def __init__(self) -> None:
         super().__init__(
             help_command=HelpCommand(),
-            command_prefix=commands.when_mentioned_or(self.get_prefix),
+            command_prefix=self.get_prefix,
             description="this is a cool bot made for jailbreak trade base, join here: https://discord.gg/gwBbM6BrnP",
             intents=discord.Intents.all(),
         )
@@ -36,6 +36,7 @@ class Bot(commands.AutoShardedBot):
         print(f"Logged in as {self.user}")
         bot_status["status"] = "Running"
         bot_status["start_time"] = time.time()
+        control.bot = self
         await self.update_latency.start()
 
     async def setup_hook(self) -> None:
@@ -55,7 +56,7 @@ class Bot(commands.AutoShardedBot):
 
     async def start(self) -> None:
         discord.utils.setup_logging(level=logging.INFO)
-        await super().start(config.TEST_TOKEN, reconnect=True)
+        await super().start(config.BOT_TOKEN, reconnect=True)
 
     async def get_prefix(self, message: discord.Message, /):
         if message.guild is None:
@@ -63,7 +64,7 @@ class Bot(commands.AutoShardedBot):
         prefix = await database.get_prefix(self.db)
         if prefix is None:
             await database.set_prefix(self.db, "=")
-        return prefix if prefix else "="
+        return commands.when_mentioned_or(prefix)(self, message)
 
 if __name__ == "__main__":
     bot = Bot()

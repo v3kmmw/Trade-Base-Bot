@@ -54,48 +54,52 @@ async def set_prefix(db: aiosqlite.Connection, new_prefix: str):
         print(f"Error updating prefix: {e}")
         await db.rollback()
 
-async def add_user(db: aiosqlite.Connection, user_id: int, invited_by: int = None):
+async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: int = None):
     try:
-        # Check if the user ID exists in the table
-        check_query = """
-            SELECT id FROM users WHERE id = ?
-        """
-        async with db.execute(check_query, (user_id,)) as cursor:
-            row = await cursor.fetchone()
-        if row is None:
-            # Default values for new users
-            balance = 500
-            username = None
-            profile_color = '#DEFAULT_COLOR'
-            embed_image = None
-            premium = False
-            message_streak = 0
-            linked_roblox_account = None
-            crew_id = None
-            vouches = 0
-            scammer_reports = 0
-            reports = '[]'
-            tickets = '[]'
-            invites = 0
-            fake_invites = 0
+        # Use the provided database connection or create a new one
+        async with aiosqlite.connect("./data/database.db") if db is None else db as db:
+            # Check if the user ID exists in the table
+            check_query = "SELECT id FROM users WHERE id = ?"
+            async with db.execute(check_query, (user_id,)) as cursor:
+                row = await cursor.fetchone()
+            
+            if row is None:
+                # Default values for new users
+                balance = 500
+                username = None
+                profile_color = '#DEFAULT_COLOR'
+                embed_image = None
+                premium = False
+                message_streak = 0
+                messages = 0
+                linked_roblox_account = None
+                crew_id = None
+                vouches = 0
+                scammer_reports = 0
+                reports = '[]'
+                tickets = '[]'
+                invites = 0
+                fake_invites = 0
 
-            insert_query = """
-                INSERT INTO users (id, username, balance, profile_color, embed_image, premium, 
-                                   message_streak, linked_roblox_account, crew_id, vouches, 
-                                   scammer_reports, reports, tickets, invited_by, invites, fake_invites)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-            insert_params = (user_id, username, balance, profile_color, embed_image, premium,
-                             message_streak, linked_roblox_account, crew_id, vouches,
-                             scammer_reports, reports, tickets, invited_by, invites, fake_invites)
-            await db.execute(insert_query, insert_params)
-            await db.commit()
-            print(f"User ID {user_id} inserted with default values.")
-        else:
-            return
+                insert_query = """
+                    INSERT INTO users (id, username, balance, profile_color, embed_image, premium, 
+                                       message_streak, messages, linked_roblox_account, crew_id, vouches, 
+                                       scammer_reports, reports, tickets, invited_by, invites, fake_invites)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                insert_params = (user_id, username, balance, profile_color, embed_image, premium,
+                                 message_streak, messages, linked_roblox_account, crew_id, vouches,
+                                 scammer_reports, reports, tickets, invited_by, invites, fake_invites)
+                
+                async with db.execute(insert_query, insert_params) as cursor:
+                    await db.commit()
+                    print(f"User ID {user_id} inserted with default values.")
+            else:
+                print(f"User ID {user_id} already exists.")
     except Exception as e:
         print(f"Error adding user ID {user_id}: {e}")
-        await db.rollback()
+        
+
 
 
 async def get_user(db: aiosqlite.Connection, user: discord.User):
@@ -179,6 +183,36 @@ async def delete_unlockable_role(db: aiosqlite.Connection, role_id):
         print(f"Error deleting unlockable role with ID {role_id}: {e}")
         await db.rollback()
     
+async def count_message(user_id: int):
+    try:
+        query = """
+            UPDATE users
+            SET messages = messages + 1
+            WHERE id = ?
+        """
+        async with aiosqlite.connect("./data/database.db") as db:
+            await db.execute(query, (user_id,))
+            await db.commit()
+            print(f"Messages count updated for User ID {user_id}")
+    except Exception as e:
+        print(f"Error counting messages for User ID {user_id}: {e}")
+
+async def get_messages(db: aiosqlite.Connection, user_id):
+    try:
+        query = """
+            SELECT messages
+            FROM users
+            WHERE id = ?
+        """
+        async with db.execute(query, (user_id,)) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                return 0
+            return row[0]  # Extract the messages count from the database row
+    except Exception as e:
+        print(f"Error retrieving messages for User ID {user_id}: {e}")
+        return []
+
 async def handle_role_check(db: aiosqlite.Connection, user, bot: commands.Bot):
     try:
         db_user = await get_user(db, user)
@@ -519,7 +553,7 @@ async def create_code(db: aiosqlite.Connection, user, amount):
             VALUES (?,?,?)
         """
         user_id = user.id
-        await add_user(db, user_id)
+        await add_user(user_id)
         insert_params = (code, amount, user_id)
         await db.execute(insert_query, insert_params)
         await db.commit()
@@ -529,3 +563,29 @@ async def create_code(db: aiosqlite.Connection, user, amount):
         await db.rollback()
         return None
     
+
+async def get_top_messagers(db: aiosqlite.Connection):
+    try:
+        query = """
+            SELECT id, username, messages
+            FROM users
+            ORDER BY messages DESC
+            LIMIT 10
+        """
+        async with db.execute(query) as cursor:
+            rows = await cursor.fetchall()
+        
+        # Convert the rows to a list of dictionaries
+        top_messagers = []
+        for row in rows:
+            top_messagers.append({
+                'id': row[0],
+                'roblox_username': row[1],
+                'messages': row[2]
+            })
+        
+        return top_messagers
+    
+    except Exception as e:
+        print(f"Error fetching top messagers: {e}")
+        return None

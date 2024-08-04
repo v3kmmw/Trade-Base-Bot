@@ -9,14 +9,14 @@ class InviteManagement(commands.Cog):
 
     @commands.hybrid_command(description="Add or remove invites")
     @commands.is_owner()
-    async def manageinvites(self, ctx: commands.Context, action: str = None, amount: int = None, user: discord.User = None):
+    async def manageinvites(self, ctx: commands.Context, action: str = None, user: discord.User = None, amount: int = None):
         """
         Command to add or remove invites.
         Usage:
-        - `invites add <amount>`: Adds the specified amount of invites to the command issuer.
-        - `invites remove <amount>`: Removes the specified amount of invites from the command issuer.
-        - `invites add <user> <amount>`: Adds the specified amount of invites to the mentioned user.
-        - `invites remove <user> <amount>`: Removes the specified amount of invites from the mentioned user.
+        - `manageinvites add <amount>`: Adds the specified amount of invites to the command issuer.
+        - `manageinvites remove <amount>`: Removes the specified amount of invites from the command issuer.
+        - `manageinvites add <user> <amount>`: Adds the specified amount of invites to the mentioned user.
+        - `manageinvites remove <user> <amount>`: Removes the specified amount of invites from the mentioned user.
         """
         if action is None:
             usage_embed = discord.Embed(

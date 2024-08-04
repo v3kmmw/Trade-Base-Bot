@@ -58,7 +58,6 @@ class RemoveRoles(View):
         self.add_item(RoleSelect(roles))
 
 class Sync(commands.Cog):
-    """Basic ping command"""
     def __init__(self, bot):
         self.bot = bot
 

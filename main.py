@@ -13,7 +13,6 @@ import time
 from utilities.heartbeat import bot_status
 from discord.ext import tasks
 from utilities import automod
-
 def install_requirements():
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
 
@@ -26,11 +25,14 @@ class ProofView(View):
         super().__init__()
 
 async def on_error(ctx, error: commands.CommandError):
+    if isinstance(error, commands.CommandNotFound):
+        return
     embed = discord.Embed(
-        title=f"Error",
-        color=discord.Color.dark_embed(),
+        description="There was an error running this command",
+        color=ctx.author.color,
     )
-    embed.add_field(name="Reason", value=error)
+    embed.set_footer(text="If you are an administrator, check the logs for more information")
+    embed.set_author(name=f"Error | {ctx.author.display_name}")
     await ctx.send(embed=embed)
     error_channel = ctx.channel
     user = ctx.author
@@ -52,9 +54,9 @@ async def on_error(ctx, error: commands.CommandError):
 async def on_message(message):
     if message.author.bot:
         return
-    async with aiosqlite.connect("./data/database.db") as db:
-        await database.add_user(db, message.author.id)
-        await automod.check_message(message)
+    await database.add_user(message.author.id, None, None)
+    await automod.check_message(message)
+    await database.count_message(message.author.id)
     await bot.process_commands(message)
 
 async def run_bot():
@@ -64,6 +66,10 @@ async def run_bot():
 def start_api():
     from utilities import api
     api.start()
+
+def start_control_panel():
+    from utilities import control
+    control.start()
 
 def start_heartbeat():
     from utilities import heartbeat
@@ -77,6 +83,10 @@ if __name__ == "__main__":
     # Start the heartbeat server in another separate thread
     heartbeat_thread = threading.Thread(target=start_heartbeat)
     heartbeat_thread.start()
+
+    # Start the control panel in a separate thread
+    control_panel_thread = threading.Thread(target=start_control_panel)
+    control_panel_thread.start()
 
     # Run the bot in the main thread
     asyncio.run(run_bot())

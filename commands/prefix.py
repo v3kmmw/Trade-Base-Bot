@@ -10,6 +10,10 @@ class Prefix(commands.Cog):
     
     @commands.hybrid_command(description="View or set the bot's prefix", aliases=["pfx"])
     async def prefix(self, ctx: commands.Context, prefix: str = None):
+        """
+        Command to set or view the bots prefix.
+        """
+        await ctx.defer()
         embed = discord.Embed(description="### Prefix\n\n", color=ctx.author.color)
         if prefix and len(prefix) > 3 and ctx.author.guild_permissions.manage_guild: 
             embed.description += "The prefix can't be longer than 3 characters!"

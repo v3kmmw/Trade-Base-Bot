@@ -56,5 +56,17 @@ class Automod(commands.Cog):
         embed.set_author(name=f"Automod Test | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
 
+    @automod.command(with_app_command=False)
+    async def toggle(self, ctx: commands.Context):
+        """Disable a specific automod setting"""
+        status = await automod.toggle_automod()
+        embed = discord.Embed(
+            description=f"``Automod {status}``"
+        )
+        embed.set_author(name=f"Automod | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        await ctx.send(embed=embed)
+
+
+
 async def setup(bot):
     await bot.add_cog(Automod(bot))

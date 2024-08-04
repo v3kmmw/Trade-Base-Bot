@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS users (
     embed_image TEXT,
     premium BOOLEAN DEFAULT FALSE,
     message_streak INTEGER DEFAULT 0,
+    messages INTEGER DEFAULT 0,
     linked_roblox_account TEXT,
     crew_id INTEGER REFERENCES crews(id),
     vouches INTEGER DEFAULT 0,
