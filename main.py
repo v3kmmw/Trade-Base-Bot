@@ -13,6 +13,7 @@ import time
 from utilities.heartbeat import bot_status
 from discord.ext import tasks
 from utilities import automod
+import aiomysql
 def install_requirements():
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
 
@@ -56,8 +57,12 @@ async def on_message(message):
         return
     await database.add_user(message.author.id, None, None)
     await automod.check_message(message)
-    await database.count_message(message.author.id)
+    await database.count_message(message)
     await bot.process_commands(message)
+
+@bot.event
+async def on_member_join(member):
+    await database.add_user(member.id, None, None)
 
 async def run_bot():
     bot.on_command_error = on_error

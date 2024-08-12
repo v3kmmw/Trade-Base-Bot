@@ -6,3 +6,7 @@ Flask-Cors
 aiohttp
 cogwatch
 openai
+aioboto3
+requests
+vaderSentiment
+transformers

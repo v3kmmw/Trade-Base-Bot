@@ -1,0 +1,899 @@
+<!--
+=========================================================
+* Material Dashboard Dark Edition - v2.1.0
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/material-dashboard-dark
+* Copyright 2019 Creative Tim (http://www.creative-tim.com)
+
+* Coded by www.creative-tim.com
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="apple-touch-icon" sizes="76x76" href="../assets/img/apple-icon.png">
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <title>
+    JBTB Dashboard - Home
+  </title>
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+  <!--     Fonts and icons     -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+  <!-- CSS Files -->
+  <link href="../assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
+  <!-- CSS Just for demo purpose, don't include it in your project -->
+  <link href="../assets/demo/demo.css" rel="stylesheet" />
+  <style>
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo .simple-text {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      margin-right: 10px; /* Space between icon and text */
+      height: 40px; /* Adjust the height as needed */
+      width: 40px; /* Ensure the width is the same as the height */
+      border-radius: 50%; /* Make the image circular */
+      object-fit: cover; /* Ensure the image covers the area without distortion */
+    }
+  </style>
+</head>
+
+<body class="dark-edition">
+  <div class="wrapper ">
+    <div id="sidebar" class="sidebar" data-color="green" data-background-color="black">
+      <!--
+        Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
+
+        Tip 2: you can also add an image using data-image tag
+    -->
+      <div class="logo">
+        <a href="" class="simple-text logo-normal">
+          <img src="https://database.jbtradebase.xyz/icons/favicon.png" alt=""> JBTB Dashboard
+        </a>
+      </div>
+      <div class="sidebar-wrapper">
+        <ul class="nav">
+          <li class="nav-item active  ">
+            <a class="nav-link" href="/">
+              <i class="material-icons">dashboard</i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="/economy">
+              <i class="material-icons">money</i>
+              <p>Economy</p>
+            </a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="/giveaways">
+              <i class="material-icons">redeem</i>
+              <p>Giveaways</p>
+            </a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="/commands">
+              <i class="material-icons">list</i>
+              <p>Commands</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="main-panel">
+      <!-- Navbar -->
+      <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top " id="navigation-example">
+        <div class="container-fluid">
+          
+          <div class="navbar-wrapper">
+            <a class="navbar-brand" href="javascript:void(0)">Dashboard</a>
+          </div>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation" data-target="#navigation-example">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+          </button>
+          <div class="collapse navbar-collapse justify-content-end">
+            <form class="navbar-form">
+              <div class="input-group no-border">
+
+              </div>
+            </form>
+          
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a class="nav-link" href="javscript:void(0)" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="material-icons">notifications</i>
+                  <span class="notification">5</span>
+                  <p class="d-lg-none d-md-block">
+                    Notifications
+                  </p>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                  <a class="dropdown-item" href="javascript:void(0)">This does not work yet</a>
+                  <a class="dropdown-item" href="javascript:void(0)">This will display recent moderator actions!</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a href="/login" class="nav-link" href="javascript:void(0)">
+                  <i id="user-icon" class="material-icons">person</i>
+                  <p class="d-lg-none d-md-block">
+                    Account
+                  </p>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <!-- End Navbar -->
+      <div class="content">
+        <div class="container-fluid">
+          <div class="alert alert-warning" role="alert">
+            This dashboard is experimental, expect bugs, but please report them if you can.
+          </div>
+          <div class="row">
+            <div class="col-xl-4 col-lg-12">
+              <div class="card card-chart">
+                <div class="card-header card-header-success">
+                  <div class="ct-chart" id="dailySalesChart"></div>
+                </div>
+                <div class="card-body">
+                  <h4 class="card-title">Daily Member Gain</h4>
+                  <p class="card-category">
+                    <span class="text-success"><i class="fa fa-long-arrow-up"></i> 55 </span></p>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">access_time</i> updated 4 minutes ago
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-4 col-lg-12">
+              <div class="card card-chart">
+                <div class="card-header card-header-success">
+                  <div class="ct-chart" id="websiteViewsChart"></div>
+                </div>
+                <div class="card-body">
+                  <h4 class="card-title">Messages</h4>
+                  <p class="card-category">
+                    <span class="text-success"><i class="fa fa-long-arrow-up"></i> 55 </span></p>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">access_time</i> campaign sent 2 days ago
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-4 col-lg-12">
+              <div class="card card-chart">
+                <div class="card-header card-header-success">
+                  <div class="ct-chart" id="completedTasksChart"></div>
+                </div>
+                <div class="card-body">
+                  <h4 class="card-title">Moderator Actions</h4>
+                  <p class="card-category">
+                    <span class="text-success"><i class="fa fa-long-arrow-up"></i> 55 </span></p>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">access_time</i> campaign sent 2 days ago
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+              <div class="card card-stats">
+                <div class="card-header card-header-success card-header-icon">
+                  <div class="card-icon">
+                    <i class="material-icons">people</i>
+                  </div>
+                  <p class="card-category">Total Members</p>
+                  <h3 id="member-count" class="card-title">
+                    <small class="suffix">K</small>
+                  </h3>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">date_range</i> Last 24 Hours
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+              <div class="card card-stats">
+                <div class="card-header card-header-success card-header-icon">
+                  <div class="card-icon">
+                    <i class="material-icons">add</i>
+                  </div>
+                  <p class="card-category">Members Gained</p>
+                  <h3 id="daily-members" class="card-title">0</h3>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">date_range</i> Last 24 Hours
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+              <div class="card card-stats">
+                <div class="card-header card-header-success card-header-icon">
+                  <div class="card-icon">
+                    <i class="material-icons">message</i>
+                  </div>
+                  <p class="card-category">Messages</p>
+                  <h3 id="daily-message-count" class="card-title">0</h3>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                    <i class="material-icons">date_range</i> Last 24 Hours
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+              <div class="card card-stats">
+              
+                <div class="card-header card-header-success card-header-icon">
+                  <div class="card-icon">
+                    <i class="material-icons">upload</i>
+                  </div>
+                  
+                  <p class="card-category">Upload File</p>
+                  <a href="#" class="btn btn-success">Upload <input type="file" id="fileInput" class="file-input" /></a>
+                  <div id="success-alert" class="alert alert-success display-none" role="alert">
+                    File Uploaded Successfully!
+                  </div>
+                </div>
+                <div class="card-footer justify-content-center">
+                  <div class="stats">
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6 col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title">Mod Stats</h4>
+                </div>
+                <div class="card-body table-responsive">
+                  <table class="table table-hover">
+                    <thead class="text-warning">
+                      <th>Rank</th>
+                      <th>Username</th>
+                      <th>Logs</th>
+                      <th>Timezone</th>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1</td>
+                        <td>Dakota Rice</td>
+                        <td>$36,738</td>
+                        <td>Niger</td>
+                      </tr>
+                      <tr>
+                        <td>2</td>
+                        <td>Minerva Hooper</td>
+                        <td>$23,789</td>
+                        <td>Curaçao</td>
+                      </tr>
+                      <tr>
+                        <td>3</td>
+                        <td>Sage Rodriguez</td>
+                        <td>$56,142</td>
+                        <td>Netherlands</td>
+                      </tr>
+                      <tr>
+                        <td>4</td>
+                        <td>Philip Chaney</td>
+                        <td>$38,735</td>
+                        <td>Korea, South</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title">Top Messagers</h4>
+                </div>
+                <div class="card-body">
+                  <table class="table table-hover">
+                    <thead class="text-warning">
+                      <th>Rank</th>
+                      <th>Username</th>
+                      <th>Messages</th>
+                      <th>Join Date</th>
+                    </thead>
+                    <tbody id="top-messagers">
+                      <tr>
+                        <td>1</td>
+                        <td>Dakota Rice</td>
+                        <td>$36,738</td>
+                        <td>Niger</td>
+                      </tr>
+                      <tr>
+                        <td>2</td>
+                        <td>Minerva Hooper</td>
+                        <td>$23,789</td>
+                        <td>Curaçao</td>
+                      </tr>
+                      <tr>
+                        <td>3</td>
+                        <td>Sage Rodriguez</td>
+                        <td>$56,142</td>
+                        <td>Netherlands</td>
+                      </tr>
+                      <tr>
+                        <td>4</td>
+                        <td>Philip Chaney</td>
+                        <td>$38,735</td>
+                        <td>Korea, South</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        const x = new Date().getFullYear();
+        let date = document.getElementById('date');
+        date.innerHTML = '&copy; ' + x + date.innerHTML;
+      </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Check if 'id' and 'avatar' exist in sessionStorage
+      const id = sessionStorage.getItem('id');
+      const avatar = sessionStorage.getItem('avatar');
+      const userIcon = document.getElementById('user-icon');
+
+      if (id && avatar) {
+          // If avatar exists, set it as the background image of the icon
+          userIcon.style.backgroundImage = `url(${avatar})`;
+          userIcon.style.backgroundSize = 'cover';
+          userIcon.style.width = '40px'; // Set width for the icon
+          userIcon.style.borderRadius = '50%'; // Set border radius
+          userIcon.style.height = '40px'; // Set height for the icon
+          userIcon.textContent = ''; // Remove default text if image is set
+      } else if (!id) {
+          // Redirect to login if ID does not exist
+          window.location.href = "/login";
+      }
+  });
+</script>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const memberCountElement = document.getElementById('member-count');
+  const dailymembers = document.getElementById('daily-members');
+  const dailymessages = document.getElementById('daily-message-count');
+  const suffixElement = memberCountElement.querySelector('.suffix');
+
+  function formatMemberCount(count) {
+    if (count >= 1000 && count < 1000000) {
+      suffixElement.textContent = 'K';
+      return (count / 1000).toFixed(1);
+    } else if (count >= 1000000) {
+      suffixElement.textContent = 'M';
+      return (count / 1000000).toFixed(1);
+    } else {
+      suffixElement.textContent = '';
+      return count;
+    }
+  }
+
+  function updateMemberCount(count) {
+    const formattedCount = formatMemberCount(count);
+    memberCountElement.firstChild.nodeValue = formattedCount;
+  }
+
+  function updateDailyMembers(dailymembercount) {
+    const formattedCount = formatMemberCount(dailymembercount);
+    dailymembers.firstChild.nodeValue = formattedCount;
+  }
+
+  function updateDailyMessages(dailymessagecount) {
+    const formattedCount = formatMemberCount(dailymessagecount);
+    dailymessages.firstChild.nodeValue = formattedCount;
+  }
+
+  // Fetch and update the daily messages from your API
+  fetch('/dailymessages')
+    .then(response => response.json())
+    .then(data => {
+      const count = data; // Adjust based on your API response format
+      updateDailyMessages(count);
+    })
+    .catch(error => console.error('Error fetching daily messages:', error));
+
+  // Fetch and update the member count from your API
+  fetch('/fetch_membercount')
+    .then(response => response.json())
+    .then(data => {
+      const count = data; // Adjust based on your API response format
+      updateMemberCount(count);
+    })
+    .catch(error => console.error('Error fetching member count:', error));
+  fetch('/dailymembers')
+    .then(response => response.json())
+    .then(data => {
+      const count = data; // Adjust based on your API response format
+      updateDailyMembers(count);
+    })
+    .catch(error => console.error('Error fetching member count:', error));
+});
+  </script>
+    </div>
+  </div>
+  <div class="fixed-plugin">
+    <div class="dropdown show-dropdown">
+      <a href="#" data-toggle="dropdown">
+        <i class="fa fa-cog fa-2x"> </i>
+      </a>
+      <ul class="dropdown-menu">
+        <li class="header-title">Accent Color</li>
+        <li class="adjustments-line">
+          <a class="">
+            <div class="badge-colors ml-auto mr-auto">
+              <span class="badge filter badge-purple active" data-color="purple"></span>
+              <span class="badge filter badge-azure" data-color="azure"></span>
+              <span class="badge filter badge-green" data-color="green"></span>
+              <span class="badge filter badge-warning" data-color="orange"></span>
+              <span class="badge filter badge-danger" data-color="danger"></span>
+            </div>
+            <div class="clearfix"></div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <!--   Core JS Files   -->
+  <script src="../assets/js/core/jquery.min.js"></script>
+  <script src="../assets/js/core/popper.min.js"></script>
+  <script src="../assets/js/core/bootstrap-material-design.min.js"></script>
+  <script src="https://unpkg.com/default-passive-events"></script>
+  <script src="../assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+  <!-- Place this tag in your head or just before your close body tag. -->
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <!--  Google Maps Plugin    -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
+  <!-- Chartist JS -->
+  <script src="../assets/js/plugins/chartist.min.js"></script>
+  <!--  Notifications Plugin    -->
+  <script src="../assets/js/plugins/bootstrap-notify.js"></script>
+  <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
+  <script src="../assets/js/material-dashboard.js?v=2.1.0"></script>
+  <!-- Material Dashboard DEMO methods, don't include it in your project! -->
+  <script src="../assets/demo/demo.js"></script>
+  <script>
+    $(document).ready(function() {
+      $().ready(function() {
+        $sidebar = $('.sidebar');
+
+        $sidebar_img_container = $sidebar.find('.sidebar-background');
+
+        $full_page = $('.full-page');
+
+        $sidebar_responsive = $('body > .navbar-collapse');
+
+        window_width = $(window).width();
+
+        $('.fixed-plugin a').click(function(event) {
+          // Alex if we click on switch, stop propagation of the event, so the dropdown will not be hide, otherwise we set the  section active
+          if ($(this).hasClass('switch-trigger')) {
+            if (event.stopPropagation) {
+              event.stopPropagation();
+            } else if (window.event) {
+              window.event.cancelBubble = true;
+            }
+          }
+        });
+
+        $('.fixed-plugin .active-color span').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-color', new_color);
+          }
+
+          if ($full_page.length != 0) {
+            $full_page.attr('filter-color', new_color);
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.attr('data-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .background-color .badge').click(function() {
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('background-color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-background-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .img-holder').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).parent('li').siblings().removeClass('active');
+          $(this).parent('li').addClass('active');
+
+
+          var new_image = $(this).find("img").attr('src');
+
+
+
+          if ($full_page_background.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $full_page_background.fadeOut('fast', function() {
+              $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+              $full_page_background.fadeIn('fast');
+            });
+          }
+
+          if ($('.switch-sidebar-image input:checked').length == 0) {
+            var new_image = $('.fixed-plugin li.active .img-holder').find("img").attr('src');
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+            $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.css('background-image', 'url("' + new_image + '")');
+          }
+        });
+
+        $('.switch-sidebar-image input').change(function() {
+          $full_page_background = $('.full-page-background');
+
+          $input = $(this);
+
+          if ($input.is(':checked')) {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar_img_container.fadeIn('fast');
+              $sidebar.attr('data-image', '#');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page_background.fadeIn('fast');
+              $full_page.attr('data-image', '#');
+            }
+
+            background_image = true;
+          } else {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar.removeAttr('data-image');
+              $sidebar_img_container.fadeOut('fast');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page.removeAttr('data-image', '#');
+              $full_page_background.fadeOut('fast');
+            }
+
+            background_image = false;
+          }
+        });
+
+        $('.switch-sidebar-mini input').change(function() {
+          $body = $('body');
+
+          $input = $(this);
+
+          if (md.misc.sidebar_mini_active == true) {
+            $('body').removeClass('sidebar-mini');
+            md.misc.sidebar_mini_active = false;
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar();
+
+          } else {
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar('destroy');
+
+            setTimeout(function() {
+              $('body').addClass('sidebar-mini');
+
+              md.misc.sidebar_mini_active = true;
+            }, 300);
+          }
+
+          // we simulate the window Resize so the charts will get updated in realtime.
+          var simulateWindowResize = setInterval(function() {
+            window.dispatchEvent(new Event('resize'));
+          }, 180);
+
+          // we stop the simulation of Window Resize after the animations are completed
+          setTimeout(function() {
+            clearInterval(simulateWindowResize);
+          }, 1000);
+
+        });
+      });
+    });
+  </script>
+<script>
+  document.getElementById('fileInput').addEventListener('change', async function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+  
+      const formData = new FormData();
+      formData.append('files', file);
+  
+      try {
+          const response = await fetch('/uploadr2', {
+              method: 'POST',
+              body: formData,
+          });
+  
+          const alertBox = document.getElementById('success-alert');
+  
+          if (response.status === 200) {
+              result = await response.json();
+              console.log(result);
+              alertBox.classList.remove('display-none');
+              alertBox.classList.remove('alert-danger');
+              alertBox.classList.add('alert-success');
+              alertBox.innerHTML = `File Uploaded Successfully! <a href="${result}" target="_blank">View File</a>`;
+  
+              setTimeout(() => {
+                  alertBox.classList.add('display-none');
+              }, 2000);
+          } else {
+              alertBox.classList.remove('display-none');
+              alertBox.classList.remove('alert-success');
+              alertBox.classList.add('alert-danger');
+              alertBox.textContent = 'Error uploading file: ' + (await response.text());
+  
+              setTimeout(() => {
+                  alertBox.classList.add('display-none');
+              }, 2000);
+          }
+      } catch (error) {
+          const alertBox = document.getElementById('success-alert');
+          alertBox.classList.remove('display-none');
+          alertBox.classList.remove('alert-success');
+          alertBox.classList.add('alert-danger');
+          alertBox.textContent = 'Error uploading file: ' + error.message;
+  
+          setTimeout(() => {
+              alertBox.classList.add('display-none');
+          }, 2000);
+      }
+  });
+  </script>
+  <script>
+    $(document).ready(function() {
+      // Javascript method's body can be found in assets/js/demos.js
+      md.initDashboardPageCharts();
+
+    });
+  </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const cardHeaders = document.querySelectorAll('.card-header');
+    const buttons = document.querySelectorAll('.btn');
+    const sidebar = document.getElementById('sidebar');
+    function updateAccentColor() {
+      const siteAccentColor = localStorage.getItem('site_accent_color');
+      
+      cardHeaders.forEach(header => {
+        header.classList.remove('card-header-success', 'card-header-danger', 'card-header-info', 'card-header-warning', 'card-header-primary');
+        
+        switch (siteAccentColor) {
+          case 'green':
+            header.classList.add('card-header-success');
+            color = "green";
+            break;
+          case 'red':
+            header.classList.add('card-header-danger');
+            color = 'danger';
+            break;
+          case 'azure':
+            header.classList.add('card-header-info');
+            sidebar.setAttribute('data-color', "azure");
+            color = 'azure';
+            break;
+          case 'yellow':
+            header.classList.add('card-header-warning');
+            color = 'orange';
+            break;
+          case 'purple':
+            header.classList.add('card-header-primary');
+            color = "purple";
+            break;
+          default:
+            header.classList.add('card-header-success');
+            color = "green";
+        }
+      });
+      sidebar.setAttribute('data-color', color);
+
+      buttons.forEach(button => {
+        button.classList.remove('btn-success', 'btn-danger', 'btn-info', 'btn-warning', 'btn-primary');
+        switch (siteAccentColor) {
+          case 'green':
+            button.classList.add('btn-success');
+            break;
+          case'red':
+            button.classList.add('btn-danger');
+            break;
+          case 'azure':
+            button.classList.add('btn-info');
+            break;
+          case 'yellow':
+            button.classList.add('btn-warning');
+            break;
+          case 'purple':
+            button.classList.add('btn-primary');
+            break;
+          default:
+            button.classList.add('btn-success');
+        }
+      });
+    }
+
+    // Call updateAccentColor on page load
+    updateAccentColor();
+
+    // Example function to update localStorage and apply changes
+    function changeAccentColor(newColor) {
+      localStorage.setItem('site_accent_color', newColor);
+      updateAccentColor(); // Apply the new color immediately
+    }
+
+    function handleColorSelection(event) {
+            const selectedColor = event.target.getAttribute('data-color');
+            if (selectedColor) {
+                console.log('Selected color:', selectedColor);
+                if (selectedColor === 'purple') {
+                  color = 'purple';
+                  sendColorToServer(color);
+                  updateAccentColor(color); 
+                } else if (selectedColor === 'orange') {
+                  color = 'yellow';
+                  sendColorToServer(color);
+                  updateAccentColor(color); 
+                } else if (selectedColor === 'azure') {
+                  color = 'azure';
+                  sendColorToServer(color);
+                  updateAccentColor(color); 
+                } else if (selectedColor === 'green') {
+                  color = 'green';
+                  sendColorToServer(color);
+                  updateAccentColor(color); 
+                } else if (selectedColor ==='danger') {
+                  color ='red';
+                  sendColorToServer(color);
+                  updateAccentColor(color); 
+                }
+            }
+        }
+
+        // Attach event listeners to each badge
+        document.querySelectorAll('.badge-colors .badge').forEach(badge => {
+            badge.addEventListener('click', handleColorSelection);
+        });
+
+        // Example function to send the selected color to the server (you can replace this with your actual implementation)
+        function sendColorToServer(color) {
+          const userId = sessionStorage.getItem('id');
+          localStorage.setItem('site_accent_color', color);
+          fetch(`/update_user?user_id=${userId}&site_accent_color=${color}`)
+           .then(response => response.text())
+           .then(message => console.log(message))
+           .catch(error => console.error('Error updating user preferences:', error));
+
+        }
+  });
+</script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+    // Get user ID from session storage
+    const userId = sessionStorage.getItem('id');
+    
+    if (userId) {
+        // Make API request to fetch user preferences
+        fetch(`/fetch_preferences?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Check if data contains user preferences
+                if (data) {
+                  for (const [key, value] of Object.entries(data)) {
+  // Check if the value is a string. If so, store it directly.
+  if (typeof value === 'string') {
+    localStorage.setItem(key, value);
+  } else {
+    // For non-string values, convert to JSON string.
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+}
+
+                } else {
+                    console.error('No preferences found in the response');
+                }
+            })
+            .catch(error => console.error('Error fetching user preferences:', error));
+    } else {
+        console.error('User ID not found in session storage');
+    }
+});
+    </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/topmessagers')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Log the fetched data for debugging
+        populateTable(data); // Pass the fetched data to populateTable function
+      })
+      .catch(error => console.error('Error fetching daily messages:', error));
+
+    function populateTable(data) {
+      const tbody = document.getElementById('top-messagers');
+      tbody.innerHTML = ''; // Clear existing rows
+
+      data.forEach((user, index) => {
+        if (index < 5) {
+        const row = document.createElement('tr');
+        const rankCell = document.createElement('td');
+        rankCell.textContent = index + 1;
+        row.appendChild(rankCell);
+
+        const usernameCell = document.createElement('td');
+        usernameCell.textContent = user.roblox_username;
+        row.appendChild(usernameCell);
+
+        const messagesCell = document.createElement('td');
+        messagesCell.textContent = user.messages;
+        row.appendChild(messagesCell);
+
+        const joinDateCell = document.createElement('td');
+        joinDateCell.textContent = user.join_date ? new Date(user.join_date).toLocaleDateString() : 'N/A';
+        row.appendChild(joinDateCell);
+
+        tbody.appendChild(row);
+
+      }});
+    }
+  });
+</script>
+</body>
+
+</html>

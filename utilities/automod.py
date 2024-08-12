@@ -5,9 +5,12 @@ import config
 import asyncio
 from openai import OpenAI
 import time
-
+import aiohttp
+import requests
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
+analyzer = SentimentIntensityAnalyzer()
 client = OpenAI(api_key=config.OPENAIKEY)
-
 automod_queue = []
 automod_enabled = False
 
@@ -72,7 +75,35 @@ async def get_automod_type():
             return "AI"
         else:
             return row[0]
+        
+async def analyze_sentiment(text):
+    sentiment_pipeline = pipeline("sentiment-analysis")
+    results = sentiment_pipeline([text])  # Analyzing a single text as a list
+    return results[0]
 
+async def generate_explanation(sentiment_result, text):
+    model_name = "t5-small"  # You can choose a different model if needed
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+    label = sentiment_result['label']
+    score = sentiment_result['score']
+    explanation_prompt = f"Explain why this text is {label.lower()} with a score of {score}: {text}"
+
+    inputs = tokenizer.encode("summarize: " + explanation_prompt, return_tensors="pt", max_length=512, truncation=True)
+    outputs = model.generate(inputs, max_length=50, num_beams=4, early_stopping=True)
+
+    explanation = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return explanation
+        
+async def ai_process_message(message):
+    text = message['content']
+    sentiment_result = await analyze_sentiment(text)
+    explanation = await generate_explanation(sentiment_result, text)
+    print(f"Text: {text}")
+    print(f"Sentiment: {sentiment_result['label']}, Score: {sentiment_result['score']}")
+    print(f"Explanation: {explanation}\n")
+    
 async def process_message(message):
     start_time = time.time()
     try:
@@ -82,12 +113,7 @@ async def process_message(message):
             return
         if automod_type == "AI":
             print("Processing message with AI")
-            response = openai.Moderation.create(input=message.content)
-            if response and hasattr(response, 'results') and response.results:
-                output = response.results[0]
-                print(output)
-            else:
-                print("No results in response")
+            result = await ai_process_message(message)
         elif automod_type == "FILTER":
             print("Processing message with the filter")
             # Add your filter processing logic here

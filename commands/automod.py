@@ -12,7 +12,7 @@ class Automod(commands.Cog):
 
 
 
-    @commands.hybrid_group(with_app_command=False)
+    @commands.hybrid_group(with_app_command=False, aliases=['automode'])
     async def automod(self, ctx: commands.Context):
         embed = discord.Embed(
             description="Automod is handled by OpenAI's moderation api by default.\n To switch this to just the filtered words, use the command: ```automod set filter```\n To switch back to OpenAI, use ```automod set ai```"

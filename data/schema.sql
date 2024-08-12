@@ -2,6 +2,33 @@ CREATE TABLE IF NOT EXISTS prefix (
     prefix TEXT PRIMARY KEY
 );
 
+CREATE TABLE IF NOT EXISTS permissions (
+    user_id INTEGER PRIMARY KEY,
+    permissions TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS dailymessages (
+    amount INTEGER PRIMARY KEY,
+    difference INTEGER NOT NULL,
+    last_updated DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS membercount (
+    id INTEGER PRIMARY KEY,
+    joined_at DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ticketcount (
+    amount INTEGER PRIMARY KEY,
+    difference INTEGER NOT NULL,
+    last_updated DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS claimcodes (
     code TEXT PRIMARY KEY,
     amount INTEGER,
@@ -51,8 +78,6 @@ CREATE TABLE IF NOT EXISTS unlockable_roles (
     requirement_type TEXT NOT NULL
 );
 
-    
-
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     balance INTEGER NOT NULL DEFAULT 500,
@@ -62,6 +87,8 @@ CREATE TABLE IF NOT EXISTS users (
     premium BOOLEAN DEFAULT FALSE,
     message_streak INTEGER DEFAULT 0,
     messages INTEGER DEFAULT 0,
+    site_theme TEXT DEFAULT NULL,
+    site_accent_color TEXT DEFAULT NULL,
     linked_roblox_account TEXT,
     crew_id INTEGER REFERENCES crews(id),
     vouches INTEGER DEFAULT 0,
@@ -73,6 +100,7 @@ CREATE TABLE IF NOT EXISTS users (
     fake_invites INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (invited_by) REFERENCES users(id)
 );
+
 CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     name TEXT NOT NULL, 

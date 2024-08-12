@@ -4,6 +4,11 @@ from discord import app_commands
 from utilities import database
 from discord.ui import View, Button
 
+class Panel(View):
+    def __init__(self):
+        super().__init__()
+
+
 class SupportView(View):
     def __init__(self, bot, author, message, origin):
         super().__init__()
@@ -136,6 +141,16 @@ class BotHelp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.hybrid_command(description="Get help with moderation", aliases=["dash", "panel"])
+    async def dashboard(self, ctx: commands.Context):
+        embed = discord.Embed(
+            description=f"You can access the dashboard by clicking on the button below.",
+            color=ctx.author.color,
+        )
+        view = Panel()
+        view.add_item(discord.ui.Button(label="Click Here", style=discord.ButtonStyle.link, url="https://control.jbtradebase.xyz", row=1))
+        embed.set_author(name=f"Dashboard | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        await ctx.send(embed=embed, view=view)
 
 
     @commands.hybrid_command(description="Get help with moderation")

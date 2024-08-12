@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>JBTB Dashboard - Giveawaways</title>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <!--     Fonts and icons     -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+  <!-- Material Kit CSS -->
+  <link href="assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
+  <style>
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo .simple-text {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      margin-right: 10px; /* Space between icon and text */
+      height: 40px; /* Adjust the height as needed */
+      width: 40px; /* Ensure the width is the same as the height */
+      border-radius: 50%; /* Make the image circular */
+      object-fit: cover; /* Ensure the image covers the area without distortion */
+    }
+  </style>
+</head>
+
+<body class="dark-edition">
+  <div class="wrapper ">
+    <div id="sidebar" class="sidebar" data-color="green" data-background-color="black">
+      <!--
+        Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
+
+        Tip 2: you can also add an image using data-image tag
+    -->
+      <div class="logo">
+        <a href="" class="simple-text logo-normal">
+          <img src="https://database.jbtradebase.xyz/icons/favicon.png" alt=""> JBTB Dashboard
+        </a>
+      </div>
+      <div class="sidebar-wrapper">
+        <ul class="nav">
+          <li class="nav-item   ">
+            <a class="nav-link" href="/">
+              <i class="material-icons">dashboard</i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/economy">
+              <i class="material-icons">money</i>
+              <p>Economy</p>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link" href="/giveaways">
+              <i class="material-icons">redeem</i>
+              <p>Giveaways</p>
+            </a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="/commands">
+              <i class="material-icons">list</i>
+              <p>Commands</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="main-panel">
+      <!-- Navbar -->
+       
+      <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top " id="navigation-example">
+        <div class="container-fluid">
+          <div class="navbar-wrapper">
+            <a class="navbar-brand" href="javascript:void(0)">Dashboard / Giveaways</a>
+          </div>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation" data-target="#navigation-example">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+          </button>
+          <div class="collapse navbar-collapse justify-content-end">
+            <form class="navbar-form">
+              <div class="input-group no-border">
+
+              </div>
+            </form>
+          
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a class="nav-link" href="javscript:void(0)" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="material-icons">notifications</i>
+                  <span class="notification">5</span>
+                  <p class="d-lg-none d-md-block">
+                    Notifications
+                  </p>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                  <a class="dropdown-item" href="javascript:void(0)">This does not work yet</a>
+                  <a class="dropdown-item" href="javascript:void(0)">This will display recent moderator actions!</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a href="/login" class="nav-link" href="javascript:void(0)">
+                  <i id="user-icon" class="material-icons">person</i>
+                  <p class="d-lg-none d-md-block">
+                    Account
+                  </p>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <!-- End Navbar -->
+      <div class="content">
+        
+        <div class="container-fluid">
+          <div class="alert alert-warning" role="alert">
+            This dashboard is experimental, expect bugs, but please report them if you can.
+          </div>
+          <div class="card">
+            <div class="card-body">
+              !!GIVEAWAY PAGE DOCUMENTATION HERE!!
+            </div>
+            
+          </div>
+          <div class="row">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                      <div class="card-icon">
+                          <i class="material-icons">add</i>
+                      </div>
+                      <p class="card-category">Giveaways Hosted</p>
+                      <h3 class="card-title">
+                        <span class="counter">0</span>
+                      </h3>
+                    </div>
+                    <div class="card-footer justify-content-center">
+                      <div class="stats">
+                        <i class="material-icons">access_time</i> Last Updated: ???
+                      </div>
+                    </div>
+                </div>
+            </div>
+        
+          
+            </div>
+          
+                    
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fixed-plugin">
+    <div class="dropdown show-dropdown">
+      <a href="#" data-toggle="dropdown">
+        <i class="fa fa-cog fa-2x"> </i>
+      </a>
+      <ul class="dropdown-menu">
+        <li class="header-title">Accent Color</li>
+        <li class="adjustments-line">
+          <a class="">
+            <div class="badge-colors ml-auto mr-auto">
+              <span class="badge filter badge-purple active" data-color="purple"></span>
+              <span class="badge filter badge-azure" data-color="azure"></span>
+              <span class="badge filter badge-green" data-color="green"></span>
+              <span class="badge filter badge-warning" data-color="orange"></span>
+              <span class="badge filter badge-danger" data-color="danger"></span>
+            </div>
+            <div class="clearfix"></div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <!--   Core JS Files   -->
+  <script src="./assets/js/core/jquery.min.js"></script>
+  <script src="./assets/js/core/popper.min.js"></script>
+  <script src="./assets/js/core/bootstrap-material-design.min.js"></script>
+  <script src="https://unpkg.com/default-passive-events"></script>
+  <script src="./assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+  <!-- Place this tag in your head or just before your close body tag. -->
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <!--  Google Maps Plugin    -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
+  <!-- Chartist JS -->
+  <script src="./assets/js/plugins/chartist.min.js"></script>
+  <!--  Notifications Plugin    -->
+  <script src="./assets/js/plugins/bootstrap-notify.js"></script>
+  <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
+  <script src="./assets/js/material-dashboard.js?v=2.1.0"></script>
+  <!-- Material Dashboard DEMO methods, don't include it in your project! -->
+  <script src="./assets/demo/demo.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if 'id' and 'avatar' exist in sessionStorage
+        const id = sessionStorage.getItem('id');
+        const avatar = sessionStorage.getItem('avatar');
+        const userIcon = document.getElementById('user-icon');
+  
+        if (id && avatar) {
+            // If avatar exists, set it as the background image of the icon
+            userIcon.style.backgroundImage = `url(${avatar})`;
+            userIcon.style.backgroundSize = 'cover';
+            userIcon.style.width = '40px'; // Set width for the icon
+            userIcon.style.borderRadius = '50%'; // Set border radius
+            userIcon.style.height = '40px'; // Set height for the icon
+            userIcon.textContent = ''; // Remove default text if image is set
+        } else if (!id) {
+            // Redirect to login if ID does not exist
+            window.location.href = "/login";
+        }
+    });
+  </script>
+  <script>
+    $(document).ready(function() {
+      $().ready(function() {
+        $sidebar = $('.sidebar');
+
+        $sidebar_img_container = $sidebar.find('.sidebar-background');
+
+        $full_page = $('.full-page');
+
+        $sidebar_responsive = $('body > .navbar-collapse');
+
+        window_width = $(window).width();
+
+        $('.fixed-plugin a').click(function(event) {
+          // Alex if we click on switch, stop propagation of the event, so the dropdown will not be hide, otherwise we set the  section active
+          if ($(this).hasClass('switch-trigger')) {
+            if (event.stopPropagation) {
+              event.stopPropagation();
+            } else if (window.event) {
+              window.event.cancelBubble = true;
+            }
+          }
+        });
+
+        $('.fixed-plugin .active-color span').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-color', new_color);
+          }
+
+          if ($full_page.length != 0) {
+            $full_page.attr('filter-color', new_color);
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.attr('data-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .background-color .badge').click(function() {
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('background-color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-background-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .img-holder').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).parent('li').siblings().removeClass('active');
+          $(this).parent('li').addClass('active');
+
+
+          var new_image = $(this).find("img").attr('src');
+
+          if ($sidebar_img_container.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+            $sidebar_img_container.fadeOut('fast', function() {
+              $sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+              $sidebar_img_container.fadeIn('fast');
+            });
+          }
+
+          if ($full_page_background.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $full_page_background.fadeOut('fast', function() {
+              $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+              $full_page_background.fadeIn('fast');
+            });
+          }
+
+          if ($('.switch-sidebar-image input:checked').length == 0) {
+            var new_image = $('.fixed-plugin li.active .img-holder').find("img").attr('src');
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+            $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.css('background-image', 'url("' + new_image + '")');
+          }
+        });
+
+        $('.switch-sidebar-image input').change(function() {
+          $full_page_background = $('.full-page-background');
+
+          $input = $(this);
+
+          if ($input.is(':checked')) {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar_img_container.fadeIn('fast');
+              $sidebar.attr('data-image', '#');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page_background.fadeIn('fast');
+              $full_page.attr('data-image', '#');
+            }
+
+            background_image = true;
+          } else {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar.removeAttr('data-image');
+              $sidebar_img_container.fadeOut('fast');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page.removeAttr('data-image', '#');
+              $full_page_background.fadeOut('fast');
+            }
+
+            background_image = false;
+          }
+        });
+
+        $('.switch-sidebar-mini input').change(function() {
+          $body = $('body');
+
+          $input = $(this);
+
+          if (md.misc.sidebar_mini_active == true) {
+            $('body').removeClass('sidebar-mini');
+            md.misc.sidebar_mini_active = false;
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar();
+
+          } else {
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar('destroy');
+
+            setTimeout(function() {
+              $('body').addClass('sidebar-mini');
+
+              md.misc.sidebar_mini_active = true;
+            }, 300);
+          }
+
+          // we simulate the window Resize so the charts will get updated in realtime.
+          var simulateWindowResize = setInterval(function() {
+            window.dispatchEvent(new Event('resize'));
+          }, 180);
+
+          // we stop the simulation of Window Resize after the animations are completed
+          setTimeout(function() {
+            clearInterval(simulateWindowResize);
+          }, 1000);
+
+        });
+      });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cardHeaders = document.querySelectorAll('.card-header');
+      const buttons = document.querySelectorAll('.btn');
+      const sidebar = document.getElementById('sidebar');
+      function updateAccentColor() {
+        const siteAccentColor = localStorage.getItem('site_accent_color');
+        
+        cardHeaders.forEach(header => {
+          header.classList.remove('card-header-success', 'card-header-danger', 'card-header-info', 'card-header-warning', 'card-header-primary');
+          
+          switch (siteAccentColor) {
+            case 'green':
+              header.classList.add('card-header-success');
+              color = "green";
+              break;
+            case 'red':
+              header.classList.add('card-header-danger');
+              color = 'danger';
+              break;
+            case 'azure':
+              header.classList.add('card-header-info');
+              sidebar.setAttribute('data-color', "azure");
+              color = 'azure';
+              break;
+            case 'yellow':
+              header.classList.add('card-header-warning');
+              color = 'orange';
+              break;
+            case 'purple':
+              header.classList.add('card-header-primary');
+              color = "purple";
+              break;
+            default:
+              header.classList.add('card-header-success');
+              color = "green";
+          }
+        });
+        sidebar.setAttribute('data-color', color);
+  
+        buttons.forEach(button => {
+          button.classList.remove('btn-success', 'btn-danger', 'btn-info', 'btn-warning', 'btn-primary');
+          switch (siteAccentColor) {
+            case 'green':
+              button.classList.add('btn-success');
+              break;
+            case'red':
+              button.classList.add('btn-danger');
+              break;
+            case 'azure':
+              button.classList.add('btn-info');
+              break;
+            case 'yellow':
+              button.classList.add('btn-warning');
+              break;
+            case 'purple':
+              button.classList.add('btn-primary');
+              break;
+            default:
+              button.classList.add('btn-success');
+          }
+        });
+      }
+  
+      // Call updateAccentColor on page load
+      updateAccentColor();
+  
+      // Example function to update localStorage and apply changes
+      function changeAccentColor(newColor) {
+        localStorage.setItem('site_accent_color', newColor);
+        updateAccentColor(); // Apply the new color immediately
+      }
+  
+      function handleColorSelection(event) {
+              const selectedColor = event.target.getAttribute('data-color');
+              if (selectedColor) {
+                  console.log('Selected color:', selectedColor);
+                  if (selectedColor === 'purple') {
+                    color = 'purple';
+                    sendColorToServer(color);
+                    updateAccentColor(color); 
+                  } else if (selectedColor === 'orange') {
+                    color = 'yellow';
+                    sendColorToServer(color);
+                    updateAccentColor(color); 
+                  } else if (selectedColor === 'azure') {
+                    color = 'azure';
+                    sendColorToServer(color);
+                    updateAccentColor(color); 
+                  } else if (selectedColor === 'green') {
+                    color = 'green';
+                    sendColorToServer(color);
+                    updateAccentColor(color); 
+                  } else if (selectedColor ==='danger') {
+                    color ='red';
+                    sendColorToServer(color);
+                    updateAccentColor(color); 
+                  }
+              }
+          }
+  
+          // Attach event listeners to each badge
+          document.querySelectorAll('.badge-colors .badge').forEach(badge => {
+              badge.addEventListener('click', handleColorSelection);
+          });
+  
+          // Example function to send the selected color to the server (you can replace this with your actual implementation)
+          function sendColorToServer(color) {
+            const userId = sessionStorage.getItem('id');
+            localStorage.setItem('site_accent_color', color);
+            fetch(`/update_user?user_id=${userId}&site_accent_color=${color}`)
+             .then(response => response.text())
+             .then(message => console.log(message))
+             .catch(error => console.error('Error updating user preferences:', error));
+  
+          }
+    });
+  </script>
+</body>
+
+</html>
