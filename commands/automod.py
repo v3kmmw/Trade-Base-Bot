@@ -12,7 +12,7 @@ class Automod(commands.Cog):
 
 
 
-    @commands.hybrid_group(with_app_command=False, aliases=['automode'])
+    @commands.hybrid_group(with_app_command=False, aliases=['automode', 'am'])
     async def automod(self, ctx: commands.Context):
         embed = discord.Embed(
             description="Automod is handled by OpenAI's moderation api by default.\n To switch this to just the filtered words, use the command: ```automod set filter```\n To switch back to OpenAI, use ```automod set ai```"
@@ -65,6 +65,32 @@ class Automod(commands.Cog):
         )
         embed.set_author(name=f"Automod | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
+
+    @automod.command(with_app_command=False)
+    async def model(self, ctx: commands.Context, model: str = None):
+        if model:
+            status = await automod.change_model(model)
+            if status == 200:
+                embed = discord.Embed(
+                    description=f"Automod Model Set to ``{model}``"
+                )
+                embed.set_author(name=f"Automod | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(
+                    description=f"Failed to set Automod Model. Status Code: {status}"
+                )
+                embed.set_author(name=f"Automod | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+                await ctx.send(embed=embed)
+        elif not model:
+            model = await automod.get_model()
+            embed = discord.Embed(
+                description=f"Automod Model: ``{model}``"
+            )
+            embed.set_author(name=f"Automod | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            await ctx.send(embed=embed)
+
+
 
 
 

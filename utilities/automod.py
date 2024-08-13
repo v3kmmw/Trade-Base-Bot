@@ -6,7 +6,9 @@ import asyncio
 from openai import OpenAI
 import time
 import aiohttp
+import aiofiles
 import requests
+import json
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 analyzer = SentimentIntensityAnalyzer()
@@ -76,28 +78,74 @@ async def get_automod_type():
         else:
             return row[0]
         
+async def get_model():
+    try:
+        async with aiofiles.open("am.json", "r") as f:
+            data = await f.read()
+            data = json.loads(data)
+        return data["model"]
+    except Exception as e:
+        print(f"Error reading model JSON file: {e}")
+        return None
+        
+async def change_model(model):
+    try:
+        # Load the new model
+        ai_model = AutoModelForSeq2SeqLM.from_pretrained(model)
+        
+        # If the model can't be loaded, return an error
+        if not ai_model:
+            return 400
+        
+        # Open the JSON file for reading and writing
+        async with aiofiles.open("am.json", "r+") as f:
+            data = await f.read()
+            data = json.loads(data)
+            data["model"] = model
+            
+            # Truncate the file and write the updated data
+            await f.seek(0)
+            await f.truncate()
+            await f.write(json.dumps(data))
+        
+        print(f"Model changed to {model}.")
+        return 200
+
+    except Exception as e:
+        print(f"Error changing model: {e}")
+        return 500
+        
 async def analyze_sentiment(text):
     sentiment_pipeline = pipeline("sentiment-analysis")
     results = sentiment_pipeline([text])  # Analyzing a single text as a list
     return results[0]
 
 async def generate_explanation(sentiment_result, text):
-    model_name = "t5-small"  # You can choose a different model if needed
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-
-    label = sentiment_result['label']
-    score = sentiment_result['score']
-    explanation_prompt = f"Explain why this text is {label.lower()} with a score of {score}: {text}"
-
-    inputs = tokenizer.encode("summarize: " + explanation_prompt, return_tensors="pt", max_length=512, truncation=True)
-    outputs = model.generate(inputs, max_length=50, num_beams=4, early_stopping=True)
-
-    explanation = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return explanation
+    try:
+        with open("am.json", "r") as f:
+            data = json.load(f)
+            model_name = data["model"]
+        
+        # Load the tokenizer and model
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        
+        label = sentiment_result['label']
+        score = sentiment_result['score']
+        explanation_prompt = f"Explain why this text is {label.lower()} with a score of {score}: {text}"
+        
+        inputs = tokenizer.encode("summarize: " + explanation_prompt, return_tensors="pt", max_length=512, truncation=True)
+        outputs = model.generate(inputs, max_length=50, num_beams=4, early_stopping=True)
+        
+        explanation = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return explanation
+    
+    except Exception as e:
+        print(f"Error generating explanation: {e}")
+        return None
         
 async def ai_process_message(message):
-    text = message['content']
+    text = message.content
     sentiment_result = await analyze_sentiment(text)
     explanation = await generate_explanation(sentiment_result, text)
     print(f"Text: {text}")
