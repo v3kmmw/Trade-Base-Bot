@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS unlockable_roles (
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     balance INTEGER NOT NULL DEFAULT 500,
+    bank INTEGER NOT NULL DEFAULT 0,
     username TEXT UNIQUE,
     profile_color TEXT DEFAULT '#DEFAULT_COLOR',
     embed_image TEXT,

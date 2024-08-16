@@ -10,3 +10,4 @@ aioboto3
 requests
 vaderSentiment
 transformers
+boto3

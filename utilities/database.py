@@ -63,7 +63,7 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
         # Use the provided database connection or create a new one
         if not connection_provided:
             db = await aiosqlite.connect("./data/database.db")
-            
+        
         # Check if the user ID exists in the table
         check_query = "SELECT id FROM users WHERE id = ?"
         async with db.execute(check_query, (user_id,)) as cursor:
@@ -72,6 +72,7 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
         if row is None:
             # Default values for new users
             balance = 500
+            bank = 0
             username = None
             profile_color = '#DEFAULT_COLOR'
             embed_image = None
@@ -90,12 +91,12 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
             fake_invites = 0
 
             insert_query = """
-                INSERT INTO users (id, username, balance, profile_color, embed_image, premium, 
+                INSERT INTO users (id, username, balance, bank, profile_color, embed_image, premium, 
                                    message_streak, messages, site_theme, site_accent_color, linked_roblox_account, crew_id, vouches, 
                                    scammer_reports, reports, tickets, invited_by, invites, fake_invites)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            insert_params = (user_id, username, balance, profile_color, embed_image, premium,
+            insert_params = (user_id, username, balance, bank, profile_color, embed_image, premium,
                              message_streak, messages, site_theme, site_accent_color, linked_roblox_account, crew_id, vouches,
                              scammer_reports, reports, tickets, invited_by, invites, fake_invites)
             
@@ -104,9 +105,9 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
             VALUES (?, ?)
             """
             
-            async with db.transaction():  # Ensure transaction management
-                await db.execute(insert_query, insert_params)
-                await db.execute(daily_member_insert_query, (user_id, datetime.now()))
+            async with db.cursor() as cursor:
+                await cursor.execute(insert_query, insert_params)
+                await cursor.execute(daily_member_insert_query, (user_id, datetime.now()))
                 await db.commit()
                 print(f"User ID {user_id} inserted with default values.")
         else:
@@ -125,7 +126,7 @@ async def get_user(db: aiosqlite.Connection, user: discord.User):
         print("Fetching Data with the API...")
     try:
         query = """
-            SELECT id, username, balance, invited_by, invites, fake_invites,
+            SELECT id, username, balance, bank, invited_by, invites, fake_invites,
                    profile_color, embed_image, premium, message_streak, messages, site_theme, site_accent_color, linked_roblox_account,
                    crew_id, vouches, scammer_reports, tickets, reports
             FROM users
@@ -140,22 +141,23 @@ async def get_user(db: aiosqlite.Connection, user: discord.User):
             'id': row[0],
             'username': row[1],
             'balance': row[2],
-            'invited_by': row[3],
-            'invites': row[4],
-            'fake_invites': row[5],
-            'profile_color': row[6],
-            'embed_image': row[7],
-            'premium': row[8],
-            'message_streak': row[9],
-            'messages': row[10],
-            'site_theme': row[11],
-            'site_accent_color': row[12],
-            'linked_roblox_account': row[13],
-            'crew_id': row[14],
-            'vouches': row[15],
-            'scammer_reports': row[16],
-            'tickets': json.loads(row[17]) if row[17] else [],
-            'reports': json.loads(row[18]) if row[18] else []
+            'bank': row[3],
+            'invited_by': row[4],
+            'invites': row[5],
+            'fake_invites': row[6],
+            'profile_color': row[7],
+            'embed_image': row[8],
+            'premium': row[9],
+            'message_streak': row[10],
+            'messages': row[11],
+            'site_theme': row[12],
+            'site_accent_color': row[13],
+            'linked_roblox_account': row[14],
+            'crew_id': row[15],
+            'vouches': row[16],
+            'scammer_reports': row[17],
+            'tickets': json.loads(row[18]) if row[18] else [],
+            'reports': json.loads(row[19]) if row[19] else []
         }
         return user_data
     except Exception as e:
@@ -336,7 +338,7 @@ async def update_user(db: aiosqlite.Connection, user_id: int, **kwargs):
                 return False
 
         # Validate input: ensure all keys in kwargs are valid column names
-        valid_columns = {'balance', 'username', 'profile_color', 'embed_image', 'premium',
+        valid_columns = {'balance', 'bank', 'username', 'profile_color', 'embed_image', 'premium',
                          'message_streak', 'site_theme', 'site_accent_color', 'linked_roblox_account', 'crew_id', 'vouches',
                          'scammer_reports', 'reports', 'tickets', 'invited_by', 'invites',
                          'fake_invites'}
