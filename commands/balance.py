@@ -4,9 +4,18 @@ from discord import app_commands
 from utilities import database
 from discord.ui import Button, View
 import random
+import asyncio
+import uuid
 
 MAX_BANK = 100000000, "100,000,000"
-MULTIPLIER = 2
+TTT_MAX_AMOUNT = 10000, "10,000"
+TTT_MULTIPLIER = 2
+TTT_MULTIPLIER_MP = 0.25
+ACTIVE_GAMES = set()
+MM_GAMES = {}
+MM_MULTIPLIER = 0.50
+
+
 class TicTacToeBot(View):
     def __init__(self, bot, author, amount, user_data, message):
         super().__init__()
@@ -51,22 +60,35 @@ class TicTacToeBot(View):
         for combo in winning_combinations:
         # Retrieve the buttons corresponding to the current winning combination
             buttons = [button for button in self.children if button.custom_id in combo]
-            if all(str(button.emoji) == "⭕" for button in buttons):
-                amount_earned = int(self.amount) * int(MULTIPLIER)
+            if all(str(button.emoji) == "<:circle:1273874589604380817>" for button in buttons):
+                amount_earned = int(self.amount) * int(TTT_MULTIPLIER)
                 balance = self.user_data.get('balance', 0)
-                new_balance = balance + amount_earned
+                new_balance = balance + amount_earned - self.amount
                 await database.update_user(self.bot.db, self.author.id, balance=new_balance)
                 embed = discord.Embed(
                     color=self.author.color
                 )
+                embed.add_field(name="Opponent:", value=f"Bot", inline=False)
                 embed.add_field(name="Amount earned:", value=f"``{amount_earned:,}``", inline=True)
                 embed.add_field(name="Balance:", value=f"``{new_balance:,}``", inline=True)
                 for button in self.children:
                     button.disabled = True
-                await self.message.edit(embed=embed, view=self)
+                await self.message.edit(content=f"Winner: {self.author.mention}", embed=embed, view=self)
                 return True
-            elif all(str(button.emoji) == "❌" for button in buttons):
-                await self.message.edit(content="Game over! The bot wins!", view=self)
+            elif all(str(button.emoji) == "<:x_:1273874576136208414>" for button in buttons):
+                balance = self.user_data.get('balance', 0)
+                new_balance = balance - int(self.amount)
+            
+                await database.update_user(self.bot.db, self.author.id, balance=new_balance)
+                embed = discord.Embed(
+                    color=self.author.color
+                )
+                embed.add_field(name="Opponent:", value=f"{self.author.mention}", inline=False)
+                embed.add_field(name="Amount lost:", value=f"``{self.amount:,}``", inline=True)
+                embed.add_field(name="Balance:", value=f"``{new_balance:,}``", inline=True)
+                for button in self.children:
+                    button.disabled = True
+                await self.message.edit(content="Winner: Bot", embed=embed, view=self)
                 return True
 
         if not self.available_positions:
@@ -81,7 +103,7 @@ class TicTacToeBot(View):
 
         for item in self.children:
             if item.custom_id == str(position):
-                item.emoji = "❌"  # Bot plays with X
+                item.emoji = "<:x_:1273874576136208414>"  # Bot plays with X
                 item.disabled = True
                 break
 
@@ -96,6 +118,8 @@ class TicTacToeBot(View):
 
         if int(button_clicked) not in self.available_positions:
             return await interaction.response.send_message("Invalid position!", ephemeral=True, delete_after=2)
+        if interaction.user != self.bot and interaction.user != self.author:
+            return await interaction.response.send_message("This isnt your game!", ephemeral=True, delete_after=2)
         if interaction.user != self.turn:
             return await interaction.response.send_message("It's not your turn!", ephemeral=True, delete_after=2)
 
@@ -103,11 +127,15 @@ class TicTacToeBot(View):
 
         for item in self.children:
             if item.custom_id == button_clicked:
-                item.emoji = "⭕"  # User plays with O
+                item.emoji = "<:circle:1273874589604380817>"  # User plays with O
                 item.disabled = True
                 break
 
         if await self.check_winner():
+            try:
+                ACTIVE_GAMES.remove(self.author.id)
+            except KeyError:
+                pass
             return await interaction.response.defer()
 
         await self.pick_spot()
@@ -117,10 +145,176 @@ class TicTacToeBot(View):
         
 
 class TicTacToe(View):
-    def __init__(self, opponent):
-        super().__init__(timeout=120)
-        self.winner = None
+    def __init__(self, bot, author, opponent, amount, message):
+        super().__init__()
+        self.author = author
+        self.opponent = opponent
+        self.amount = amount
+        self.message = message
+        self.bot = bot
+        self.turn = opponent
+        self.available_positions = set(range(1, 10))
+        self.add_buttons()
 
+    def add_buttons(self):
+        positions = [
+            ("1", 1), ("2", 1), ("3", 1),
+            ("4", 2), ("5", 2), ("6", 2),
+            ("7", 3), ("8", 3), ("9", 3)
+        ]
+
+        for pos, row in positions:
+            button = Button(
+                style=discord.ButtonStyle.gray,
+                row=row,
+                emoji='<:dash:1273874566665474150>',  # Initial emoji
+                custom_id=pos
+            )
+            button.callback = self.on_button_click
+            self.add_item(button)
+
+    async def check_winner(self):
+        winning_combinations = [
+            ["1", "2", "3"],  # Row 1
+            ["4", "5", "6"],  # Row 2
+            ["7", "8", "9"],  # Row 3
+            ["1", "4", "7"],  # Column 1
+            ["2", "5", "8"],  # Column 2
+            ["3", "6", "9"],  # Column 3
+            ["1", "5", "9"],  # Diagonal 1
+            ["3", "5", "7"],  # Diagonal 2
+        ]
+        user_data = await database.get_user(self.bot.db, self.author)
+        opponent_data = await database.get_user(self.bot.db, self.opponent)
+        for combo in winning_combinations:
+        # Retrieve the buttons corresponding to the current winning combination
+            buttons = [button for button in self.children if button.custom_id in combo]
+            if all(str(button.emoji) == "<:circle:1273874589604380817>" for button in buttons):
+                amount_earned = int(self.amount) * TTT_MULTIPLIER_MP
+                balance = user_data.get('balance', 0)
+                new_balance = balance + amount_earned - self.amount
+                opponent_balance = opponent_data.get('balance', 0)
+                new_opponent_balance = opponent_balance - self.amount
+                await database.update_user(self.bot.db, self.author.id, balance=new_opponent_balance)
+                await database.update_user(self.bot.db, self.author.id, balance=new_balance)
+                embed = discord.Embed(
+                    color=self.author.color,
+                )
+                
+                embed.set_author(name=f"{self.author.display_name} | Tic Tac Toe", icon_url=self.author.avatar.url)
+                embed.add_field(name=f"", value=f"{self.author.mention} | <:circle:1274093009952051271>:\n``+{self.amount:,}``", inline=True)
+                embed.add_field(name=f"", value=f"{self.opponent.mention} | <:x_:1274093008261873795>:\n``-{self.amount:,}``", inline=True)
+                for button in self.children:
+                    button.disabled = True
+                await self.message.edit(content=f"Winner: {self.author.mention}", embed=embed, view=self)
+                return True
+            elif all(str(button.emoji) == "<:x_:1273874576136208414>" for button in buttons):
+                balance = user_data.get('balance', 0)
+                new_balance = balance - int(self.amount)
+                opponent_balance = opponent_data.get('balance', 0)
+                amount_earned = int(self.amount) * TTT_MULTIPLIER_MP
+                new_opponent_balance = opponent_balance + int(amount_earned) - self.amount
+                await database.update_user(self.bot.db, self.author.id, balance=new_balance)
+                await database.update_user(self.bot.db, self.opponent.id, balance=new_opponent_balance)
+                embed = discord.Embed(
+                    color=self.author.color,
+                )
+                embed.set_author(name=f"{self.author.display_name} | Tic Tac Toe", icon_url=self.author.avatar.url)
+                embed.add_field(name=f"", value=f"{self.opponent.mention} | <:x_:1274093008261873795>:\n``+{self.amount:,}``", inline=True)
+                embed.add_field(name=f"", value=f"{self.author.mention} | <:circle:1274093009952051271>:\n``-{self.amount:,}``", inline=True)
+                for button in self.children:
+                    button.disabled = True
+                await self.message.edit(content=f"Winner: {self.opponent.mention}", embed=embed, view=self)
+                return True
+
+        if not self.available_positions:
+            await self.message.edit(content="It's a tie!", view=self)
+            return True
+
+        return False
+
+    async def on_button_click(self, interaction: discord.Interaction):
+        button_clicked = interaction.data["custom_id"]
+        if int(button_clicked) not in self.available_positions:
+            return await interaction.response.send_message("Invalid position!", ephemeral=True, delete_after=2)
+        if interaction.user != self.opponent and interaction.user != self.author:
+            return await interaction.response.send_message("This isnt your game!", ephemeral=True, delete_after=2)
+        if interaction.user != self.turn:
+            return await interaction.response.send_message("It's not your turn!", ephemeral=True, delete_after=2)
+        embed = discord.Embed(
+            color=interaction.user.color,
+            description=f"{self.opponent.mention} VS {interaction.user.mention}"
+        )
+        self.available_positions.remove(int(button_clicked))
+
+        for item in self.children:
+            if item.custom_id == button_clicked:
+                if self.turn == self.opponent:
+                    item.emoji = "<:x_:1273874576136208414>"  # Opponent plays with O
+                elif self.turn == self.author:
+                    item.emoji = "<:circle:1273874589604380817>"  # User plays with X
+                item.disabled = True
+                break
+        if await self.check_winner():
+            ACTIVE_GAMES.remove(self.author.id)
+            ACTIVE_GAMES.remove(self.opponent.id)
+            return await interaction.response.defer()
+        
+        self.turn = self.opponent if self.turn == self.author else self.author
+        await self.message.edit(content=f"{self.turn.mention}'s turn", view=self)
+        await interaction.response.defer()
+
+
+class UserConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        if argument == "self":
+            return ctx.author
+        # Fetch members whose names start with the argument
+        members = [member for member in ctx.guild.members if argument.lower() in member.name.lower()]
+        # Assuming you want to pick the first match
+        if members:
+            return members[0]
+        raise commands.BadArgument(f"User '{argument}' not found")
+
+
+class MurderMystery(View):
+    def __init__(self, bot, author, game_id, message):
+        super().__init__()
+        self.bot = bot
+        self.author = author
+        self.game_id = game_id
+        self.message = message
+        MM_GAMES[self.game_id] = set()
+        MM_GAMES[self.game_id].add(self.author.id)
+        self.cached_members = {}
+
+    @discord.ui.button(label="Join", style=discord.ButtonStyle.green, custom_id="join_game")
+    async def joingame(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=self.author.color,
+        )
+        if interaction.user.id in ACTIVE_GAMES:
+            embed.description = f"You are already in a game!"
+            await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+            return
+        if interaction.user.id in MM_GAMES[self.game_id]:
+            embed.description = f"You are already in the game!"
+            await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+            return
+        MM_GAMES[self.game_id].add(interaction.user.id)
+        embed.set_author(name=f"Murder Mystery | Host: {self.author.display_name}", icon_url=self.author.avatar.url)
+        embed.set_footer(text="Game ID: " + str(self.game_id) + "\nThe game will automatically start in 15 seconds.")
+        embed.description = "\n### Participants:\n"
+
+        for participant in MM_GAMES[self.game_id]:
+            if participant in self.cached_members:
+                user = self.cached_members[participant]
+            else:
+                user = self.bot.get_user(participant)
+            self.cached_members[participant] = user
+            embed.description += f"- {user.mention}\n"
+        await self.message.edit(embed=embed)
+        await interaction.response.send_message("You have joined the game.", ephemeral=True, delete_after=3)
 
 
 class Balance(commands.Cog):
@@ -143,10 +337,50 @@ class Balance(commands.Cog):
         )
         balance_str = f"{balance:,}"
         bank_str = f"{bank:,}"
+        total_balance = balance + bank
+        total_balance_str = f"{total_balance:,}"
         embed.add_field(name="Balance", value=f"``{balance_str}``", inline=True)
         embed.add_field(name="Bank", value=f"``{bank_str}``", inline=True)
         embed.set_author(name=f"Balance | {user.display_name}", icon_url=user.avatar.url)
+        embed.set_footer(text=f"Total Balance: {total_balance_str}")
         await ctx.send(embed=embed)
+
+    @commands.hybrid_command(description="View the leaderboard of users", aliases=["lb"])
+    async def leaderboard(self, ctx: commands.Context, type: str = None):
+        embed = discord.Embed(
+            color=ctx.author.color,
+        )
+        embed.set_author(name=f"Leaderboard | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        embed.description = "Fetching leaderboard..."
+        message = await ctx.send(embed=embed)
+        if not type:
+            embed.description = "Type not specified, fetching balance leaderboard instead."
+            embed.set_footer(text=f"This is because the leaderboard for total balance is not complete yet.")
+            type = "balance"
+            await message.edit(content="-# Want to see someones total balance? do ``bal (user)``", embed=embed)
+            await asyncio.sleep(1)
+        embed.set_footer(text=None)
+
+
+        if type.lower() == "balance" or type.lower() == "bank":
+            leaderboard = await database.get_bal_leaderboard(self.bot.db, type.lower())
+            if leaderboard:
+                description = ""
+                for index, entry in enumerate(leaderboard):
+                    if index >= 10:
+                        break
+                    user = ctx.guild.get_member(entry['id'])
+                    user_name = user.mention if user else "``unknown``"
+                    description += f"{index + 1}. {user_name}: ``{entry['balance']:,}``\n"
+                embed.description = description
+            else:
+                embed.description = "No data found for the specified type."
+
+        else:
+            embed.description = "Invalid type specified.\n``leaderboard(lb) balance/bank/none``"
+
+        await message.edit(content="", embed=embed)
+
 
     @commands.hybrid_command(description="Deposit your balance", aliases=["dep"])
     async def deposit(self, ctx: commands.Context, amount: str = None):
@@ -255,18 +489,60 @@ class Balance(commands.Cog):
         await ctx.send(embed=embed)
 
 
+    @commands.hybrid_command(description="Transfer money from one user to another", aliases=["transfer", "send"])
+    async def give(self, ctx: commands.Context, recipient: UserConverter = None, amount: str = None):
+        embed = discord.Embed(
+            color=ctx.author.color,
+        )
+        if recipient == ctx.author:
+            embed.description = "You cannot give yourself money."
+            return await ctx.send(embed=embed)
+        embed.set_author(name=f"Transfer | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        if not recipient:
+            embed.description = "Please specify a recipient."
+            return await ctx.send(embed=embed)
+        if not amount:
+            embed.description = "Please specify an amount to transfer."
+            return await ctx.send(embed=embed)
+        
+        user_data = await database.get_user(self.bot.db, ctx.author)
+        rescipient_data = await database.get_user(self.bot.db, recipient)
+        balance = user_data.get('balance', 0)
+        recipient_balance = rescipient_data.get('balance', 0)
+        
+        if amount == "all":
+            trans_amount = balance
+        elif amount == "half":
+            trans_amount = balance // 2
+        elif amount.isdigit():
+            trans_amount = int(amount)
+        new_balance = balance - trans_amount
+        new_recipient_balance = recipient_balance + trans_amount
+        
+        if new_balance < 0:
+            embed.description = "Insufficient funds in your balance."
+            return await ctx.send(embed=embed)
+        
+        # Update user data in the database
+        await database.update_user(self.bot.db, ctx.author.id, balance=new_balance)
+        await database.update_user(self.bot.db, recipient.id, balance=new_recipient_balance)
+        
+        embed.description = f"Transferred ``{trans_amount:,}`` to {recipient.mention}"
+        await ctx.send(embed=embed)
+        
 
 
 
     @commands.command(name= "add-money", description="Add money", aliases=["add-funds"])
     @commands.is_owner()
-    async def addmoney(self, ctx: commands.Context, recipient: discord.User = None, amount: int = None):
+    async def addmoney(self, ctx: commands.Context, recipient: UserConverter = None, amount: int = None):
         if not recipient:
             return await ctx.send("Please specify a recipient.")
         if not amount:
             return await ctx.send("Please specify an amount to add.")
         if amount <= 0:
             return await ctx.send("To remove money, use ``remove-money``.")
+        
         
         user_data = await database.get_user(self.bot.db, recipient)
         new_bal = user_data.get("balance", 0) + amount
@@ -277,7 +553,7 @@ class Balance(commands.Cog):
 
     @commands.command(name= "reset-money", description="Reset money", aliases=["reset-funds"])
     @commands.is_owner()
-    async def resetmoney(self, ctx: commands.Context, recipient: discord.User = None):
+    async def resetmoney(self, ctx: commands.Context, recipient: UserConverter = None):
         if not recipient:
             return await ctx.send("Please specify a recipient.")
 
@@ -296,13 +572,22 @@ class Balance(commands.Cog):
 
 
     @commands.hybrid_command(description="Play Tic Tac Toe", aliases=["ttt"])
-    async def tictactoe(self, ctx: commands.Context, amount: str = None, user: discord.User = None):
-        if not amount and not user:
-            return await ctx.send("Usage: ``tictactoe(ttt) [amount] [user](None to play against the bot)``")
+    async def tictactoe(self, ctx: commands.Context, amount: str = None, user: UserConverter = None):
         embed = discord.Embed(
             color=ctx.author.color
         )
+        max_bet, max_bet_str = TTT_MAX_AMOUNT
+        if user == ctx.author:
+            embed.description = "You cannot play against yourself."
+            return await ctx.send(embed=embed)
+        if ctx.author.id in ACTIVE_GAMES:
+            embed.description = f"You are already in a game."
+            return await ctx.send(embed=embed)
+        if not amount and not user:
+            embed.description = "### Usage:\n ``tictactoe(ttt) [amount] [user](None to play against the bot)``"
+            return await ctx.send(embed=embed)
         user_data = await database.get_user(self.bot.db, ctx.author)
+
         balance = user_data.get('balance', 0)
         if amount == "all":
             amount = int(balance)
@@ -310,6 +595,9 @@ class Balance(commands.Cog):
             amount = int(balance // 2)
         elif amount.isdigit():
             amount = int(amount)
+        else:
+            embed.description = "Invalid amount. Please use 'all', 'half' or a number.\n``tictactoe(ttt) [amount] [user](None to play against the bot)``"
+            return await ctx.send(embed=embed)
         if not user:
             embed.description = "Playing against the bot..."
             message = await ctx.send(embed=embed)
@@ -318,11 +606,64 @@ class Balance(commands.Cog):
             if balance < amount:
                 embed.description = "Insufficient funds for this game."
                 return await message.edit(embed=embed)
+            if int(amount) > max_bet:
+                embed.description = f"Maximum bet is {max_bet_str}"
+                return await message.edit(embed=embed)
             view = TicTacToeBot(self.bot, ctx.author, amount, user_data, message)
             await message.edit(content=f"{view.turn.mention}'s turn", view=view)
+            await database.update_user(self.bot.db, ctx.author.id, balance=balance - amount)
+            ACTIVE_GAMES.add(ctx.author.id)
         else:
-            await ctx.send("This part of the command is still in development. You can't play against another user right now.")
+            if user.id in ACTIVE_GAMES:
+                embed.description = f"{user.display_name} is already in a game."
+                return await ctx.send(embed=embed)
+            opponent_data = await database.get_user(self.bot.db, user)
+            opponent_balance = opponent_data.get('balance', 0)
+            if opponent_balance < amount:
+                embed.description = f"{user.mention} does not have enough funds for this game."
+                return await ctx.send(embed=embed)
+            elif balance < amount:
+                embed.description = "Insufficient funds for this game."
+                return await ctx.send(embed=embed)
+            if int(amount) > max_bet:
+                embed.description = f"Maximum bet is {max_bet_str}"
+                return await ctx.send(embed=embed)
+            embed.description = f"{user.mention} VS {ctx.author.mention}"
+            message = await ctx.send(embed=embed)
+            
+            balance = user_data.get('balance', 0)
+
+            view = TicTacToe(self.bot, ctx.author, user, amount, message)
+            await message.edit(content=f"{view.turn.mention}'s turn", view=view)
+            await database.update_user(self.bot.db, ctx.author.id, balance=balance - amount)
+            await database.update_user(self.bot.db, user.id, balance=opponent_balance - amount)
+            ACTIVE_GAMES.add(ctx.author.id)
+            ACTIVE_GAMES.add(user.id)
+
+    @commands.hybrid_group(description="Host a game of murder mystery!", aliases=["mm"])
+    async def murder_mystery(self, ctx: commands.Context):
+        embed = discord.Embed(
+            color=ctx.author.color
+        )
+        if ctx.author.id in ACTIVE_GAMES:
+            embed.description = f"You are already in a game."
+            return await ctx.send(embed=embed)
+        game_id = str(uuid.uuid4())
+        game_id = game_id[:8]
+        embed.description = "A game of murder mystery has been started!\nClick below to join the game."
+        embed.description += "\n### Participants:\n" + "- " + ctx.author.mention
+        embed.set_footer(text="Game ID: " + str(game_id))
+        embed.set_author(name=f"Murder Mystery | Host: {ctx.author.display_name}", icon_url=ctx.author.avatar.url)        
+        message = await ctx.send(embed=embed)
+        game = MurderMystery(self.bot, ctx.author, game_id, message)
+        await message.edit(content=f"{ctx.author.mention} you can start the game with ``murdermystery(mm) start``", view=game)
+        ACTIVE_GAMES.add(ctx.author.id)
 
 
+    @murder_mystery.command(name="start", description="Start the game")
+    async def start_game(self, ctx: commands.Context):
+        if ctx.author.id not in ACTIVE_GAMES:
+            return await ctx.send("You are not in a game.")
+        await ctx.send("This isnt complete yet.")
 async def setup(bot):
     await bot.add_cog(Balance(bot))

@@ -11,3 +11,6 @@ requests
 vaderSentiment
 transformers
 boto3
+aiomysql
+jishaku
+psutil

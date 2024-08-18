@@ -10,14 +10,20 @@ from discord.ui import View, Button
 import config
 import threading
 import time
-from utilities.heartbeat import bot_status
+from utilities import heartbeat
 from discord.ext import tasks
 from utilities import automod
 import aiomysql
+import json
+import aiofiles
+
+current_timestamp = time.time()
+current_time = time.localtime(current_timestamp)
+
+script_started_at_str = time.strftime("%H:%M:%S", current_time)
 def install_requirements():
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
 
-install_requirements()
 
 bot = Bot()
 
@@ -59,6 +65,16 @@ async def on_message(message):
     await automod.check_message(message)
     await database.count_message(message)
     await bot.process_commands(message)
+
+@bot.event
+async def on_command(ctx):
+    with open("stats.json", "r") as file:
+        data = json.load(file)
+        data["commands_ran"] += 1
+        with open("stats.json", "w") as file:
+            json.dump(data, file)
+
+
 
 @bot.event
 async def on_member_join(member):

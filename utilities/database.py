@@ -122,8 +122,6 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
 
 
 async def get_user(db: aiosqlite.Connection, user: discord.User):
-    if bot.api_fetch == True:
-        print("Fetching Data with the API...")
     try:
         query = """
             SELECT id, username, balance, bank, invited_by, invites, fake_invites,
@@ -658,6 +656,33 @@ async def get_daily_members(db: aiosqlite.Connection):
             return result[0]
     except Exception as e:
         print(f"Error fetching daily members: {e}")
+        return None
+    
+async def get_bal_leaderboard(db: aiosqlite.Connection, type: str):
+    try:
+        if type not in ['balance', 'bank']:
+            return None
+        query = f"""
+            SELECT id, {type}
+            FROM users
+            ORDER BY {type} DESC
+            LIMIT 100
+        """
+        async with db.execute(query) as cursor:
+            rows = await cursor.fetchall()
+        
+        # Convert the rows to a list of dictionaries
+        bal_leaderboard = []
+        for row in rows:
+            bal_leaderboard.append({
+                'id': row[0],
+                'balance': row[1],
+            })
+        
+        return bal_leaderboard
+    
+    except Exception as e:
+        print(f"Error fetching balance leaderboard: {e}")
         return None
 
 async def get_top_messagers(db: aiosqlite.Connection):
