@@ -6,15 +6,16 @@ from discord.ui import Button, View
 import random
 import asyncio
 import uuid
+import re
 
 MAX_BANK = 100000000, "100,000,000"
 TTT_MAX_AMOUNT = 10000, "10,000"
-TTT_MULTIPLIER = 2
+TTT_MULTIPLIER = 0.5
 TTT_MULTIPLIER_MP = 0.25
 ACTIVE_GAMES = set()
 MM_GAMES = {}
 MM_MULTIPLIER = 0.50
-
+ACTIVE_MM_GAMES = {}
 
 class TicTacToeBot(View):
     def __init__(self, bot, author, amount, user_data, message):
@@ -108,6 +109,7 @@ class TicTacToeBot(View):
                 break
 
         if await self.check_winner():
+            ACTIVE_GAMES.remove(self.author.id)
             return 
 
         self.turn = self.author
@@ -267,18 +269,278 @@ class TicTacToe(View):
 
 class UserConverter(commands.Converter):
     async def convert(self, ctx, argument):
+        # Check if the argument is a mention
+        mention_match = re.match(r'<@!?(\d+)>', argument)
+        if mention_match:
+            user_id = int(mention_match.group(1))
+            user = ctx.guild.get_member(user_id) or await ctx.bot.fetch_user(user_id)
+            if user:
+                return user
+
+        # Check if the argument is a user ID
+        if argument.isdigit():
+            user = ctx.guild.get_member(int(argument)) or await ctx.bot.fetch_user(int(argument))
+            if user:
+                return user
+
+        # If the argument is "self", return the command author
         if argument == "self":
             return ctx.author
-        # Fetch members whose names start with the argument
-        members = [member for member in ctx.guild.members if argument.lower() in member.name.lower()]
-        # Assuming you want to pick the first match
+
+        # Check if the argument is a username
+        members = [member for member in ctx.guild.members if argument.lower() in member.name.lower() or argument.lower() in member.display_name.lower()]
         if members:
             return members[0]
+        
+        # Raise an error if no user was found
         raise commands.BadArgument(f"User '{argument}' not found")
 
 
+class LeaveMurderMystery(View):
+    def __init__(self, bot, author, game_id, message, participants):
+        super().__init__()
+        self.bot = bot
+        self.author = author
+        self.game_id = game_id
+        self.message = message
+        self.participants = participants if participants else []
+
+    @discord.ui.button(label="Leave", style=discord.ButtonStyle.red, custom_id="leave_game")
+    async def leavegame(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed = discord.Embed(
+                color=self.author.color,
+            )
+            embed.description = f"You are not in the game!"
+            await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+            return
+        
+        # Remove the user from the game and active games
+        MM_GAMES[self.game_id].remove(interaction.user.id)
+        ACTIVE_GAMES.remove(interaction.user.id)
+        self.participants.remove(interaction.user)
+
+        # Update the embed's description to remove the user's mention
+        embed = self.message.embeds[0]
+        mention_to_remove = f"- {interaction.user.mention}\n"
+        embed.description = embed.description.replace(mention_to_remove, "")
+        
+        await self.message.edit(embed=embed)
+        await interaction.response.send_message("You have left the game.", delete_after=2, ephemeral=True)
+
+
+class MurderMysteryGame(View):
+    def __init__(self, bot, author, game_id, message, participants=None):
+        super().__init__()
+        self.bot = bot
+        self.author = author
+        self.game_id = game_id
+        self.message = message
+        self.roles = {}
+        self.available_roles = ["Murderer", "Innocent", "Sheriff"]
+        self.participants = participants if participants else set()
+        self.participant_roles = {}
+
+
+
+    @discord.ui.button(label="View Participants", style=discord.ButtonStyle.green, custom_id="view_participants_mm")
+    async def viewparticipants(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=self.author.color,
+        )
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed.description = "You are not in the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+        
+        embed.description = f"### Participants:\n"
+        for participant in self.participants:
+            embed.description += f"- {participant.mention}\n"
+
+    @discord.ui.button(emoji="<:question:1265591751809302621>", style=discord.ButtonStyle.gray, custom_id="help_mm")
+    async def help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=interaction.user.color,
+        )
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed.description = "You are not in the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+
+        role = self.participant_roles.get(interaction.user.id)
+        if role:
+            if role.lower() == "murderer":
+                embed.description = (
+                    "### Murderer\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- Select one of the participants to murder them.\n"
+                    "- The bot will temporarily mute the chosen member.\n"
+                    "- After each kill, the remaining members get a chance to vote on who they think the murderer is."
+                )
+            elif role.lower() == "sheriff":
+                embed.description = (
+                    "### Sheriff\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                    "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                    "- If you correctly identify the murderer, the game ends and the innocent people win."
+                )
+            elif role.lower() == "innocent":
+                embed.description = (
+                    "### Innocent\n"
+                    "- Your objective is to survive.\n"
+                    "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                    "- If you are killed, you will be temporarily muted."
+                )
+        else:
+            embed.description = (
+                "### Murderer\n"
+                "- The bot will DM you with a select menu.\n"
+                "- Select one of the participants to murder them.\n"
+                "- The bot will temporarily mute the chosen member.\n"
+                "- After each kill, the remaining members get a chance to vote on who they think the murderer is.\n"
+                "### Sheriff\n"
+                "- The bot will DM you with a select menu.\n"
+                "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                "- If you correctly identify the murderer, the game ends and the innocent people win.\n"
+                "### Innocent\n"
+                "- Your objective is to survive.\n"
+                "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                "- If you are killed, you will be temporarily muted."
+            )
+
+        embed.set_author(name="Murder Mystery Help", icon_url=self.author.avatar.url)
+        await interaction.response.send_message(embed=embed, delete_after=10, ephemeral=True)
+
+class MurderMysteryRoleClaim(View):
+    def __init__(self, bot, author, game_id, message, participants=None):
+        super().__init__()
+        self.bot = bot
+        self.author = author
+        self.game_id = game_id
+        self.message = message
+        self.roles = {}
+        self.available_roles = ["Murderer", "Innocent", "Sheriff"]
+        self.participants = participants if participants else set()
+        self.participant_roles = {}
+
+    @discord.ui.button(label="View Role", style=discord.ButtonStyle.green, custom_id="claim_role")
+    async def claimrole(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=self.author.color,
+        )
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed.description = "You are not in the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+
+        if self.participant_roles.get(interaction.user.id):
+            embed.description = f"Your role is ``{self.participant_roles[interaction.user.id].lower()}``."
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+
+        role = random.choice(self.available_roles)
+        if role in ["Murderer", "Sheriff"]:
+            self.available_roles.remove(role)
+        self.participant_roles[interaction.user.id] = role
+        embed.description = f"You have been assigned the ``{role.lower()}`` role."
+        await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+
+        all_claimed = True
+        for participant in self.participants:
+            if not self.participant_roles.get(participant.id):
+                all_claimed = False
+                break
+
+        if all_claimed:
+            embed.set_author(name="Murder Mystery", icon_url=self.author.avatar.url)
+            embed.description = "All participants have claimed their roles!\nThe game will begin shortly.\n### Participants:\n"
+            for participant in self.participants:
+                embed.description += f"- {participant.mention}\n"
+                dm_embed = discord.Embed(
+                    color=participant.color
+                )
+                if self.participant_roles.get(participant.id).lower() == "murderer":
+                    dm_embed.description = (
+                        "### You are the Murderer!\n\n"
+                        "- You must murder everyone to win the game.\n"
+                        "- When you murder someone, they will be muted for the duration of the game.\n"
+                        "- If you die, you lose.\n"
+                    )
+                elif self.participant_roles.get(participant.id).lower() == "sheriff":
+                    dm_embed.description = (
+                        "### You are the Sheriff!\n\n"
+                        "- You have been chosen to investigate the murderer.\n"
+                        "- Work along with the other participants to find out who the murderer is.\n"
+                        "- Be careful, the murderer is among the participants.\n"
+                        "- You can choose to shoot someone, but if you pick wrong, you will be eliminated with them.\n"
+                    )
+                elif self.participant_roles.get(participant.id).lower() == "innocent":
+                    dm_embed.description = (
+                        "### You are Innocent!\n\n"
+                        "- Your objective is to survive.\n"
+                        "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                        "- If you are killed, you will be temporarily muted."
+                    )
+                await participant.send(embed=dm_embed)
+            await self.message.edit(content="This game is still a work in progress, there is no more.", embed=embed, view=None)
+
+    @discord.ui.button(emoji="<:question:1265591751809302621>", style=discord.ButtonStyle.gray, custom_id="help_mm")
+    async def help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=interaction.user.color,
+        )
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed.description = "You are not in the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+
+        role = self.participant_roles.get(interaction.user.id)
+        if role:
+            if role.lower() == "murderer":
+                embed.description = (
+                    "### Murderer\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- Select one of the participants to murder them.\n"
+                    "- The bot will temporarily mute the chosen member.\n"
+                    "- After each kill, the remaining members get a chance to vote on who they think the murderer is."
+                )
+            elif role.lower() == "sheriff":
+                embed.description = (
+                    "### Sheriff\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                    "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                    "- If you correctly identify the murderer, the game ends and the innocent people win."
+                )
+            elif role.lower() == "innocent":
+                embed.description = (
+                    "### Innocent\n"
+                    "- Your objective is to survive.\n"
+                    "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                    "- If you are killed, you will be temporarily muted."
+                )
+        else:
+            embed.description = (
+                "### Murderer\n"
+                "- The bot will DM you with a select menu.\n"
+                "- Select one of the participants to murder them.\n"
+                "- The bot will temporarily mute the chosen member.\n"
+                "- After each kill, the remaining members get a chance to vote on who they think the murderer is.\n"
+                "### Sheriff\n"
+                "- The bot will DM you with a select menu.\n"
+                "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                "- If you correctly identify the murderer, the game ends and the innocent people win.\n"
+                "### Innocent\n"
+                "- Your objective is to survive.\n"
+                "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                "- If you are killed, you will be temporarily muted."
+            )
+
+        embed.set_author(name="Murder Mystery Help", icon_url=self.author.avatar.url)
+        await interaction.response.send_message(embed=embed, delete_after=10, ephemeral=True)
+
+                
+        
 class MurderMystery(View):
-    def __init__(self, bot, author, game_id, message):
+    def __init__(self, bot, author, game_id, message, participants=None):
         super().__init__()
         self.bot = bot
         self.author = author
@@ -287,23 +549,34 @@ class MurderMystery(View):
         MM_GAMES[self.game_id] = set()
         MM_GAMES[self.game_id].add(self.author.id)
         self.cached_members = {}
+        self.participants = participants if participants else set()
+        self.participant_roles = {}
+        self.start_count = 0
+        self.startvote.label = f"Start 0/{len(participants)}"
+        self.voted = set()
+
 
     @discord.ui.button(label="Join", style=discord.ButtonStyle.green, custom_id="join_game")
     async def joingame(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             color=self.author.color,
         )
+        if interaction.user.id == self.author.id:
+            embed.description = f"You cannot leave your own game!"
+            await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+            return
+        if interaction.user.id in MM_GAMES[self.game_id]:
+            embed.description = f"Would you like to leave?"
+            view = LeaveMurderMystery(self.bot, interaction.user, self.game_id, self.message, self.participants)
+            await interaction.response.send_message(embed=embed, view=view, delete_after=5, ephemeral=True)
+            return
         if interaction.user.id in ACTIVE_GAMES:
             embed.description = f"You are already in a game!"
             await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
             return
-        if interaction.user.id in MM_GAMES[self.game_id]:
-            embed.description = f"You are already in the game!"
-            await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
-            return
         MM_GAMES[self.game_id].add(interaction.user.id)
         embed.set_author(name=f"Murder Mystery | Host: {self.author.display_name}", icon_url=self.author.avatar.url)
-        embed.set_footer(text="Game ID: " + str(self.game_id) + "\nThe game will automatically start in 15 seconds.")
+        embed.set_footer(text="Game ID: " + str(self.game_id))
         embed.description = "\n### Participants:\n"
 
         for participant in MM_GAMES[self.game_id]:
@@ -313,9 +586,91 @@ class MurderMystery(View):
                 user = self.bot.get_user(participant)
             self.cached_members[participant] = user
             embed.description += f"- {user.mention}\n"
-        await self.message.edit(embed=embed)
-        await interaction.response.send_message("You have joined the game.", ephemeral=True, delete_after=3)
+        ACTIVE_GAMES.add(interaction.user.id)
+        self.participants.append(interaction.user)
+        prefix = await database.get_prefix(self.bot.db)
+        embed.add_field(name="Start Command (Host):", value=f"```{prefix}mm start {self.game_id}```")
+        self.startvote.label = f"Start {self.start_count}/{len(self.participants)}"
+        await self.message.edit(embed=embed, view=self)
+        await interaction.response.send_message("You have joined the game\nClick this again to leave.", ephemeral=True, delete_after=3)
+    
+        
+    @discord.ui.button(label="Start | 0/0", style=discord.ButtonStyle.red, custom_id="start_vote")
+    async def startvote(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=interaction.user.color,
+        )
+        if interaction.user.id in self.voted:
+            embed.description = "You have already voted!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
+        self.start_count += 1
+        button.label = f"Start | {self.start_count}/{len(self.participants)}"
+        self.voted.add(interaction.user.id)
+        await interaction.message.edit(view=self)
+        await interaction.response.send_message("Vote counted.", ephemeral=True, delete_after=3)
+        if self.start_count == len(self.participants) and  self.start_count >= 2:
+            embed.color = self.author.color
+            embed.description = "### Game is starting!\nClick the button below to view your role.\n### Participants:\n"
+            for participant in self.participants:
+                embed.description += "- " + participant.mention + "\n"
+            
+            embed.set_author(name=f"Murder Mystery | Host: {self.author.display_name}", icon_url=self.author.avatar.url)
+            view = MurderMysteryRoleClaim(self.bot, self.author, self.game_id, self.message, self.participants)
+            await self.message.edit(embed=embed, view=view)
+    @discord.ui.button(emoji="<:question:1265591751809302621>", style=discord.ButtonStyle.gray, custom_id="help_mm")
+    async def help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            color=interaction.user.color,
+        )
+        if interaction.user.id not in MM_GAMES[self.game_id]:
+            embed.description = "You are not in the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
 
+        role = self.participant_roles.get(interaction.user.id)
+        if role:
+            if role.lower() == "murderer":
+                embed.description = (
+                    "### Murderer\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- Select one of the participants to murder them.\n"
+                    "- The bot will temporarily mute the chosen member.\n"
+                    "- After each kill, the remaining members get a chance to vote on who they think the murderer is."
+                )
+            elif role.lower() == "sheriff":
+                embed.description = (
+                    "### Sheriff\n"
+                    "- The bot will DM you with a select menu.\n"
+                    "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                    "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                    "- If you correctly identify the murderer, the game ends and the innocent people win."
+                )
+            elif role.lower() == "innocent":
+                embed.description = (
+                    "### Innocent\n"
+                    "- Your objective is to survive.\n"
+                    "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                    "- If you are killed, you will be temporarily muted."
+                )
+        else:
+            embed.description = (
+                "### Murderer\n"
+                "- The bot will DM you with a select menu.\n"
+                "- Select one of the participants to murder them.\n"
+                "- The bot will temporarily mute the chosen member.\n"
+                "- After each kill, the remaining members get a chance to vote on who they think the murderer is.\n"
+                "### Sheriff\n"
+                "- The bot will DM you with a select menu.\n"
+                "- You can choose to shoot someone, but if you pick wrong, you will be eliminated as well.\n"
+                "- After you are eliminated, the bot will DM a random member, offering them the chance to become the new sheriff.\n"
+                "- If you correctly identify the murderer, the game ends and the innocent people win.\n"
+                "### Innocent\n"
+                "- Your objective is to survive.\n"
+                "- Try to avoid getting killed and vote on who you think the murderer is.\n"
+                "- If you are killed, you will be temporarily muted."
+            )
+
+        embed.set_author(name="Murder Mystery Help", icon_url=self.author.avatar.url)
+        await interaction.response.send_message(embed=embed, delete_after=10, ephemeral=True)
 
 class Balance(commands.Cog):
     """Commands for managing balance and bank."""
@@ -533,11 +888,11 @@ class Balance(commands.Cog):
 
 
 
-    @commands.command(name= "add-money", description="Add money", aliases=["add-funds"])
+    @commands.command(name= "add-money", description="Add money", aliases=["add-funds", "add"])
     @commands.is_owner()
     async def addmoney(self, ctx: commands.Context, recipient: UserConverter = None, amount: int = None):
         if not recipient:
-            return await ctx.send("Please specify a recipient.")
+            return await ctx.send("Please specify a user.")
         if not amount:
             return await ctx.send("Please specify an amount to add.")
         if amount <= 0:
@@ -555,7 +910,7 @@ class Balance(commands.Cog):
     @commands.is_owner()
     async def resetmoney(self, ctx: commands.Context, recipient: UserConverter = None):
         if not recipient:
-            return await ctx.send("Please specify a recipient.")
+            return await ctx.send("Please specify a user.")
 
         user_data = await database.get_user(self.bot.db, recipient)
         new_bal = 0
@@ -655,15 +1010,43 @@ class Balance(commands.Cog):
         embed.set_footer(text="Game ID: " + str(game_id))
         embed.set_author(name=f"Murder Mystery | Host: {ctx.author.display_name}", icon_url=ctx.author.avatar.url)        
         message = await ctx.send(embed=embed)
-        game = MurderMystery(self.bot, ctx.author, game_id, message)
-        await message.edit(content=f"{ctx.author.mention} you can start the game with ``murdermystery(mm) start``", view=game)
+        game = MurderMystery(self.bot, ctx.author, game_id, message, participants=[ctx.author])
+        await message.edit(view=game, embed=embed)
         ACTIVE_GAMES.add(ctx.author.id)
+        ACTIVE_MM_GAMES[game_id] = game
 
 
     @murder_mystery.command(name="start", description="Start the game")
-    async def start_game(self, ctx: commands.Context):
+    async def start_game(self, ctx: commands.Context, game_id: str = None):
+        embed = discord.Embed(
+            color=ctx.author.color
+        )
         if ctx.author.id not in ACTIVE_GAMES:
-            return await ctx.send("You are not in a game.")
-        await ctx.send("This isnt complete yet.")
+            embed.description = "You are not in a game."
+            return await ctx.send(embed=embed, delete_after=2, ephemeral=True)
+        if not game_id:
+            embed.description = "Please provide the game ID."
+            return await ctx.send(embed=embed, delete_after=2, ephemeral=True)
+        game = ACTIVE_MM_GAMES.get(game_id)
+        if not game:
+            embed.description = "Game not found."
+            return await ctx.send(embed=embed, delete_after=2, ephemeral=True)
+        message = game.message
+        if ctx.author.id!= game.author.id:
+            embed.description = "You are not the host of this game."
+            return await ctx.send(embed=embed, delete_after=2, ephemeral=True)
+        embed.description = "### Game is starting!\nClick the button below to view your role.\n### Participants:\n"
+        participants = game.participants
+        if len(participants) <= 1:
+            embed.description += "Not enough participants. Please wait for more players to join."
+            return await ctx.send(embed=embed, delete_after=2, ephemeral=True)
+        for participant in participants:
+            embed.description += "- " + participant.mention + "\n"
+
+        embed.set_author(name=f"Murder Mystery | Host: {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        view = MurderMysteryRoleClaim(self.bot, ctx.author, game_id, message, participants)
+        await message.edit(embed=embed, view=view)
+
+
 async def setup(bot):
     await bot.add_cog(Balance(bot))

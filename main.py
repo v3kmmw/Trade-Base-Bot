@@ -40,7 +40,7 @@ async def on_error(ctx, error: commands.CommandError):
     )
     embed.set_footer(text="If you are an administrator, check the logs for more information")
     embed.set_author(name=f"Error | {ctx.author.display_name}")
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, delete_after=2)
     error_channel = ctx.channel
     user = ctx.author
     log_channel = config.LOG_CHANNEL

@@ -50,6 +50,9 @@ class Bot(commands.AutoShardedBot):
         hours, seconds = divmod(seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
         formatted_uptime = f"{int(hours)} hours, {int(minutes)} minutes, {int(seconds)} seconds"
+        prefix = await database.get_prefix(self.db)
+        activity = discord.Activity(type=discord.ActivityType.watching, name=f"{prefix}commands")
+        await self.change_presence(activity=activity)
         from main import script_started_at_str
         await channel.send(f"Bot started\nServer uptime: {formatted_uptime}\nScript started at: {script_started_at_str}")
         control.bot = self

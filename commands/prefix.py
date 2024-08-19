@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from utilities import database
-
+import json
 class Prefix(commands.Cog):
     """Basic ping command"""
     def __init__(self, bot):
@@ -29,7 +29,13 @@ class Prefix(commands.Cog):
             else:
                 embed.description += f"The prefix is currently set to ``=``"
         await ctx.send(embed=embed)
-        
+
+    @commands.hybrid_command(description="View the bot stats", aliases=["statistics"])
+    async def stats(self, ctx: commands.Context, prefix: str = None):
+        with open("stats.json", "r") as f:
+            stats = json.load(f)
+        commands_ran = stats.get("commands_ran", 0)
+        await ctx.send("Commands ran: " + str(commands_ran))
 
 async def setup(bot):
     await bot.add_cog(Prefix(bot))
