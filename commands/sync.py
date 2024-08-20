@@ -64,6 +64,9 @@ class Sync(commands.Cog):
     @commands.command(description="Sync the bot | Owner only")
     @commands.is_owner()
     async def sync(self, ctx: commands.Context):
+        """
+        This command is owner only.
+        """
         await self.bot.tree.sync()
         embed = discord.Embed(
             title="Commands Synced!",

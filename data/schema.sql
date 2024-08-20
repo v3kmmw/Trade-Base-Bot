@@ -78,6 +78,11 @@ CREATE TABLE IF NOT EXISTS unlockable_roles (
     requirement_type TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS failed_rob_responses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    response TEXT
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     balance INTEGER NOT NULL DEFAULT 500,

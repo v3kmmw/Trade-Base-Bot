@@ -2,24 +2,33 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 from utilities import database
-from discord.ui import Button, View
+from discord.ui import Button, View, Select
 import random
 import asyncio
 import uuid
 import re
+import config
+import datetime
+from datetime import timedelta
 
 MAX_BANK = 100000000, "100,000,000"
 TTT_MAX_AMOUNT = 10000, "10,000"
-TTT_MULTIPLIER = 0.5
-TTT_MULTIPLIER_MP = 0.25
+TTT_MULTIPLIER = 1.50
+TTT_MULTIPLIER_MP = 1.25
 ACTIVE_GAMES = set()
 MM_GAMES = {}
-MM_MULTIPLIER = 0.50
+MM_MULTIPLIER = 1.50
+ROB_CHANCE = 0.5
 ACTIVE_MM_GAMES = {}
-
+MM_TIMEOUT_TIME = 600
+MM_TIMEOUT_DELTA = timedelta(seconds=MM_TIMEOUT_TIME)
+ROB_COOLDOWN = 60
+WORK_COOLDOWN = 30
+MINIMUM_WORK = 100
+MAXIMUM_WORK = 500
 class TicTacToeBot(View):
     def __init__(self, bot, author, amount, user_data, message):
-        super().__init__()
+        super().__init__(timeout=None)
         self.author = author
         self.amount = amount
         self.user_data = user_data
@@ -28,6 +37,20 @@ class TicTacToeBot(View):
         self.turn = author
         self.available_positions = set(range(1, 10))
         self.add_buttons()
+
+    async def log_game(self, author, opponent, result, message):
+        log_channel = await self.bot.fetch_channel(config.LOG_CHANNEL)
+        embed = discord.Embed(
+            description=f"### Tic Tac Toe Game Log",
+            timestamp=datetime.datetime.now(),
+            color=author.color
+        )
+        embed.add_field(name="Player:", value=f"{author.mention}")
+        embed.add_field(name="Opponent:", value=f"{opponent.mention}")
+        embed.add_field(name="Result:", value=f"{result}")
+        view = View()
+        view.add_item(discord.ui.Button(label="View Message", style=discord.ButtonStyle.link, url=f"{message.jump_url}", row=1))
+        await log_channel.send(embed=embed, view=view)
 
     def add_buttons(self):
         positions = [
@@ -46,6 +69,8 @@ class TicTacToeBot(View):
             button.callback = self.on_button_click
             self.add_item(button)
 
+    
+
     async def check_winner(self):
         winning_combinations = [
             ["1", "2", "3"],  # Row 1
@@ -62,10 +87,11 @@ class TicTacToeBot(View):
         # Retrieve the buttons corresponding to the current winning combination
             buttons = [button for button in self.children if button.custom_id in combo]
             if all(str(button.emoji) == "<:circle:1273874589604380817>" for button in buttons):
-                amount_earned = int(self.amount) * int(TTT_MULTIPLIER)
+                amount_earned = int(self.amount) * max(float(TTT_MULTIPLIER), 1)
+                print(amount_earned)
                 balance = self.user_data.get('balance', 0)
-                new_balance = balance + amount_earned - self.amount
-                await database.update_user(self.bot.db, self.author.id, balance=new_balance)
+                new_balance = balance + amount_earned
+                await database.update_user(self.bot.db, self.author.id, balance=int(new_balance))
                 embed = discord.Embed(
                     color=self.author.color
                 )
@@ -75,6 +101,8 @@ class TicTacToeBot(View):
                 for button in self.children:
                     button.disabled = True
                 await self.message.edit(content=f"Winner: {self.author.mention}", embed=embed, view=self)
+                ACTIVE_GAMES.remove(self.author.id)
+                await self.log_game(self.author, self.bot.user, f"{self.author.mention} won", self.message)
                 return True
             elif all(str(button.emoji) == "<:x_:1273874576136208414>" for button in buttons):
                 balance = self.user_data.get('balance', 0)
@@ -90,6 +118,8 @@ class TicTacToeBot(View):
                 for button in self.children:
                     button.disabled = True
                 await self.message.edit(content="Winner: Bot", embed=embed, view=self)
+                ACTIVE_GAMES.remove(self.author.id)
+                await self.log_game(self.author, self.bot.user, f"{self.bot.mention} won", self.message)
                 return True
 
         if not self.available_positions:
@@ -109,7 +139,6 @@ class TicTacToeBot(View):
                 break
 
         if await self.check_winner():
-            ACTIVE_GAMES.remove(self.author.id)
             return 
 
         self.turn = self.author
@@ -148,7 +177,7 @@ class TicTacToeBot(View):
 
 class TicTacToe(View):
     def __init__(self, bot, author, opponent, amount, message):
-        super().__init__()
+        super().__init__(timeout=None)
         self.author = author
         self.opponent = opponent
         self.amount = amount
@@ -175,6 +204,20 @@ class TicTacToe(View):
             button.callback = self.on_button_click
             self.add_item(button)
 
+    async def log_game(self, author, opponent, result, message):
+        log_channel = await self.bot.fetch_channel(config.LOG_CHANNEL)
+        embed = discord.Embed(
+            description=f"### Tic Tac Toe Game Log",
+            timestamp=datetime.datetime.now(),
+            color=author.color
+        )
+        embed.add_field(name="Player:", value=f"{author.mention}")
+        embed.add_field(name="Opponent:", value=f"{opponent.mention}")
+        embed.add_field(name="Result:", value=f"{result}")
+        view = View()
+        view.add_item(discord.ui.Button(label="View Message", style=discord.ButtonStyle.link, url=f"{message.jump_url}", row=1))
+        await log_channel.send(embed=embed, view=view)
+
     async def check_winner(self):
         winning_combinations = [
             ["1", "2", "3"],  # Row 1
@@ -192,11 +235,12 @@ class TicTacToe(View):
         # Retrieve the buttons corresponding to the current winning combination
             buttons = [button for button in self.children if button.custom_id in combo]
             if all(str(button.emoji) == "<:circle:1273874589604380817>" for button in buttons):
-                amount_earned = int(self.amount) * TTT_MULTIPLIER_MP
+                amount_earned = int(self.amount) * max(float(TTT_MULTIPLIER_MP), 1)
+                print(amount_earned)
                 balance = user_data.get('balance', 0)
-                new_balance = balance + amount_earned - self.amount
+                new_balance = balance + int(amount_earned) + self.amount
                 opponent_balance = opponent_data.get('balance', 0)
-                new_opponent_balance = opponent_balance - self.amount
+                new_opponent_balance = opponent_balance
                 await database.update_user(self.bot.db, self.author.id, balance=new_opponent_balance)
                 await database.update_user(self.bot.db, self.author.id, balance=new_balance)
                 embed = discord.Embed(
@@ -204,29 +248,31 @@ class TicTacToe(View):
                 )
                 
                 embed.set_author(name=f"{self.author.display_name} | Tic Tac Toe", icon_url=self.author.avatar.url)
-                embed.add_field(name=f"", value=f"{self.author.mention} | <:circle:1274093009952051271>:\n``+{self.amount:,}``", inline=True)
+                embed.add_field(name=f"", value=f"{self.author.mention} | <:circle:1274093009952051271>:\n``+{amount_earned:,}``", inline=True)
                 embed.add_field(name=f"", value=f"{self.opponent.mention} | <:x_:1274093008261873795>:\n``-{self.amount:,}``", inline=True)
                 for button in self.children:
                     button.disabled = True
                 await self.message.edit(content=f"Winner: {self.author.mention}", embed=embed, view=self)
+                await self.log_game(self.author, self.opponent, f"{self.author.mention} won", self.message)
                 return True
             elif all(str(button.emoji) == "<:x_:1273874576136208414>" for button in buttons):
                 balance = user_data.get('balance', 0)
-                new_balance = balance - int(self.amount)
+                new_balance = balance 
                 opponent_balance = opponent_data.get('balance', 0)
-                amount_earned = int(self.amount) * TTT_MULTIPLIER_MP
-                new_opponent_balance = opponent_balance + int(amount_earned) - self.amount
+                amount_earned = int(self.amount) * max(float(TTT_MULTIPLIER_MP), 1)
+                new_opponent_balance = opponent_balance + int(amount_earned) + self.amount
                 await database.update_user(self.bot.db, self.author.id, balance=new_balance)
                 await database.update_user(self.bot.db, self.opponent.id, balance=new_opponent_balance)
                 embed = discord.Embed(
                     color=self.author.color,
                 )
                 embed.set_author(name=f"{self.author.display_name} | Tic Tac Toe", icon_url=self.author.avatar.url)
-                embed.add_field(name=f"", value=f"{self.opponent.mention} | <:x_:1274093008261873795>:\n``+{self.amount:,}``", inline=True)
+                embed.add_field(name=f"", value=f"{self.opponent.mention} | <:x_:1274093008261873795>:\n``+{amount_earned:,}``", inline=True)
                 embed.add_field(name=f"", value=f"{self.author.mention} | <:circle:1274093009952051271>:\n``-{self.amount:,}``", inline=True)
                 for button in self.children:
                     button.disabled = True
                 await self.message.edit(content=f"Winner: {self.opponent.mention}", embed=embed, view=self)
+                await self.log_game(self.author, self.opponent, f"{self.opponent.mention} won", self.message)
                 return True
 
         if not self.available_positions:
@@ -269,31 +315,34 @@ class TicTacToe(View):
 
 class UserConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        # Check if the argument is a mention
-        mention_match = re.match(r'<@!?(\d+)>', argument)
-        if mention_match:
-            user_id = int(mention_match.group(1))
-            user = ctx.guild.get_member(user_id) or await ctx.bot.fetch_user(user_id)
-            if user:
-                return user
+        try:
+            # Check if the argument is a mention
+            mention_match = re.match(r'<@!?(\d+)>', argument)
+            if mention_match:
+                user_id = int(mention_match.group(1))
+                user = ctx.guild.get_member(user_id) or await ctx.bot.fetch_user(user_id)
+                if user:
+                    return user
 
-        # Check if the argument is a user ID
-        if argument.isdigit():
-            user = ctx.guild.get_member(int(argument)) or await ctx.bot.fetch_user(int(argument))
-            if user:
-                return user
+            # Check if the argument is a user ID
+            if argument.isdigit():
+                user = ctx.guild.get_member(int(argument)) or await ctx.bot.fetch_user(int(argument))
+                if user:
+                    return user
 
-        # If the argument is "self", return the command author
-        if argument == "self":
-            return ctx.author
+            # If the argument is "self", return the command author
+            if argument.lower() == "self":
+                return ctx.author
 
-        # Check if the argument is a username
-        members = [member for member in ctx.guild.members if argument.lower() in member.name.lower() or argument.lower() in member.display_name.lower()]
-        if members:
-            return members[0]
-        
-        # Raise an error if no user was found
-        raise commands.BadArgument(f"User '{argument}' not found")
+            # Check if the argument is a username
+            members = [member for member in ctx.guild.members if argument.lower() in member.name.lower() or argument.lower() in member.display_name.lower()]
+            if members:
+                return members[0]
+
+            # If no user was found, return None
+            return None
+        except Exception as e:
+            return None
 
 
 class LeaveMurderMystery(View):
@@ -330,7 +379,7 @@ class LeaveMurderMystery(View):
 
 
 class MurderMysteryGame(View):
-    def __init__(self, bot, author, game_id, message, participants=None):
+    def __init__(self, bot, author, game_id, message, participants=None, participant_roles=None):
         super().__init__()
         self.bot = bot
         self.author = author
@@ -339,7 +388,7 @@ class MurderMysteryGame(View):
         self.roles = {}
         self.available_roles = ["Murderer", "Innocent", "Sheriff"]
         self.participants = participants if participants else set()
-        self.participant_roles = {}
+        self.participant_roles = participant_roles
 
 
 
@@ -355,6 +404,7 @@ class MurderMysteryGame(View):
         embed.description = f"### Participants:\n"
         for participant in self.participants:
             embed.description += f"- {participant.mention}\n"
+        await interaction.response.send_message(embed=embed, delete_after=5, ephemeral=True)
 
     @discord.ui.button(emoji="<:question:1265591751809302621>", style=discord.ButtonStyle.gray, custom_id="help_mm")
     async def help(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -411,6 +461,59 @@ class MurderMysteryGame(View):
         embed.set_author(name="Murder Mystery Help", icon_url=self.author.avatar.url)
         await interaction.response.send_message(embed=embed, delete_after=10, ephemeral=True)
 
+class MurderMysteryMurderer(View):
+    def __init__(self, bot, author, game_id, message, participants=None, murderer=None):
+        super().__init__()
+        self.bot = bot
+        self.author = author
+        self.game_id = game_id
+        self.message = message
+        self.roles = {}
+        self.participants = participants
+        self.participant_roles = {}
+        self.murderer = murderer
+        self.murdered_participants = set()
+        self.wave = 1
+
+        # Create select options dynamically based on participants
+        options = [
+            discord.SelectOption(label=participant.display_name, value=str(participant.id))
+            for participant in self.participants
+        ]
+
+        # Add the select menu to the view
+        select = Select(
+            placeholder="Select a participant to murder",
+            options=options,
+            custom_id="murderer_select",
+            max_values=1
+        )
+        select.callback = self.select_member
+        self.add_item(select)
+
+    async def select_member(self, interaction: discord.Interaction):
+        # This method is called when the select menu is interacted with
+        selected_member_id = interaction.data['values'][0]
+        selected_member = discord.utils.get(self.participants, id=int(selected_member_id))
+        if selected_member:
+            await interaction.response.send_message(f"You have chosen to murder {selected_member.mention}")
+            embed = discord.Embed(
+                color=self.author.color,
+            )
+            embed.set_author(name=f"Murder Mystery | {self.wave}/{len(self.participants)}", icon_url=self.author.avatar.url)
+            embed.description = f"{selected_member.mention} has been murdered.\nVote on who you think the murderer is below."
+            self.murdered_participants.add(selected_member)
+            timeout_duration = MM_TIMEOUT_DELTA
+            await selected_member.timeout(timeout_duration, reason="Murderer timeout")
+            await self.message.edit(embed=embed)
+        else:
+            await interaction.response.send_message("Invalid participant selected.")    
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        # This method checks if the interaction is from the game author
+        return interaction.user == self.murderer
+    
+
 class MurderMysteryRoleClaim(View):
     def __init__(self, bot, author, game_id, message, participants=None):
         super().__init__()
@@ -451,9 +554,8 @@ class MurderMysteryRoleClaim(View):
 
         if all_claimed:
             embed.set_author(name="Murder Mystery", icon_url=self.author.avatar.url)
-            embed.description = "All participants have claimed their roles!\nThe game will begin shortly.\n### Participants:\n"
+            embed.description = "All participants have claimed their roles!\nThe game will begin shortly.\n"
             for participant in self.participants:
-                embed.description += f"- {participant.mention}\n"
                 dm_embed = discord.Embed(
                     color=participant.color
                 )
@@ -464,6 +566,7 @@ class MurderMysteryRoleClaim(View):
                         "- When you murder someone, they will be muted for the duration of the game.\n"
                         "- If you die, you lose.\n"
                     )
+                    view = MurderMysteryMurderer(self.bot, self.author, self.game_id, self.message, self.participants, participant)
                 elif self.participant_roles.get(participant.id).lower() == "sheriff":
                     dm_embed.description = (
                         "### You are the Sheriff!\n\n"
@@ -472,6 +575,7 @@ class MurderMysteryRoleClaim(View):
                         "- Be careful, the murderer is among the participants.\n"
                         "- You can choose to shoot someone, but if you pick wrong, you will be eliminated with them.\n"
                     )
+                    view = None
                 elif self.participant_roles.get(participant.id).lower() == "innocent":
                     dm_embed.description = (
                         "### You are Innocent!\n\n"
@@ -479,8 +583,10 @@ class MurderMysteryRoleClaim(View):
                         "- Try to avoid getting killed and vote on who you think the murderer is.\n"
                         "- If you are killed, you will be temporarily muted."
                     )
-                await participant.send(embed=dm_embed)
-            await self.message.edit(content="This game is still a work in progress, there is no more.", embed=embed, view=None)
+                    view=None
+                await participant.send(embed=dm_embed, view=view)
+            gameview = MurderMysteryGame(self.bot, self.author, self.game_id, self.message, self.participants, self.participant_roles)
+            await self.message.edit(embed=embed, view=gameview)
 
     @discord.ui.button(emoji="<:question:1265591751809302621>", style=discord.ButtonStyle.gray, custom_id="help_mm")
     async def help(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -541,7 +647,7 @@ class MurderMysteryRoleClaim(View):
         
 class MurderMystery(View):
     def __init__(self, bot, author, game_id, message, participants=None):
-        super().__init__()
+        super().__init__(timeout=300)
         self.bot = bot
         self.author = author
         self.game_id = game_id
@@ -592,7 +698,7 @@ class MurderMystery(View):
         embed.add_field(name="Start Command (Host):", value=f"```{prefix}mm start {self.game_id}```")
         self.startvote.label = f"Start {self.start_count}/{len(self.participants)}"
         await self.message.edit(embed=embed, view=self)
-        await interaction.response.send_message("You have joined the game\nClick this again to leave.", ephemeral=True, delete_after=3)
+        await interaction.response.send_message("Click again to leave.", ephemeral=True, delete_after=3)
     
         
     @discord.ui.button(label="Start | 0/0", style=discord.ButtonStyle.red, custom_id="start_vote")
@@ -600,6 +706,9 @@ class MurderMystery(View):
         embed = discord.Embed(
             color=interaction.user.color,
         )
+        if len(self.participants) < 2:
+            embed.description = "Not enough participants to start the game!"
+            return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
         if interaction.user.id in self.voted:
             embed.description = "You have already voted!"
             return await interaction.response.send_message(embed=embed, delete_after=2, ephemeral=True)
@@ -607,7 +716,7 @@ class MurderMystery(View):
         button.label = f"Start | {self.start_count}/{len(self.participants)}"
         self.voted.add(interaction.user.id)
         await interaction.message.edit(view=self)
-        await interaction.response.send_message("Vote counted.", ephemeral=True, delete_after=3)
+        await interaction.response.defer()
         if self.start_count == len(self.participants) and  self.start_count >= 2:
             embed.color = self.author.color
             embed.description = "### Game is starting!\nClick the button below to view your role.\n### Participants:\n"
@@ -672,13 +781,31 @@ class MurderMystery(View):
         embed.set_author(name="Murder Mystery Help", icon_url=self.author.avatar.url)
         await interaction.response.send_message(embed=embed, delete_after=10, ephemeral=True)
 
-class Balance(commands.Cog):
+class Economy(commands.Cog):
     """Commands for managing balance and bank."""
 
     def __init__(self, bot):
         self.bot = bot
         self.max_bank = MAX_BANK
     
+
+
+
+
+
+    async def log_transaction(self, user: discord.User, amount: int, transaction_type: str):
+        log_channel = await self.bot.fetch_channel(config.LOG_CHANNEL)
+        embed = discord.Embed(
+            color=user.color,
+        )
+        embed.set_author(name=f"{user.display_name} | {transaction_type}", icon_url=user.avatar.url)
+        embed.add_field(name="Amount", value=f"``{amount:,}``", inline=True)
+        user_data = await database.get_user(self.bot.db, user)
+        embed.add_field(name="Balance", value=f"``{user_data.get('balance', 0):,}``", inline=True)
+        embed.add_field(name="Bank", value=f"``{user_data.get('bank', 0):,}``", inline=True)
+        embed.timestamp = datetime.datetime.now()
+        await log_channel.send(embed=embed)
+
     @commands.hybrid_command(description="View your balance", aliases=["bal"])
     async def balance(self, ctx: commands.Context, user: discord.User = None):
         if not user:
@@ -705,19 +832,13 @@ class Balance(commands.Cog):
         embed = discord.Embed(
             color=ctx.author.color,
         )
-        embed.set_author(name=f"Leaderboard | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        if not type:
+            type = "total"
+        embed.set_author(name=f"Leaderboard | {type.capitalize()} | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         embed.description = "Fetching leaderboard..."
         message = await ctx.send(embed=embed)
-        if not type:
-            embed.description = "Type not specified, fetching balance leaderboard instead."
-            embed.set_footer(text=f"This is because the leaderboard for total balance is not complete yet.")
-            type = "balance"
-            await message.edit(content="-# Want to see someones total balance? do ``bal (user)``", embed=embed)
-            await asyncio.sleep(1)
-        embed.set_footer(text=None)
 
-
-        if type.lower() == "balance" or type.lower() == "bank":
+        if type.lower() == "balance" or type.lower() == "bank" or type.lower() == "total":
             leaderboard = await database.get_bal_leaderboard(self.bot.db, type.lower())
             if leaderboard:
                 description = ""
@@ -726,7 +847,8 @@ class Balance(commands.Cog):
                         break
                     user = ctx.guild.get_member(entry['id'])
                     user_name = user.mention if user else "``unknown``"
-                    description += f"{index + 1}. {user_name}: ``{entry['balance']:,}``\n"
+                    amount = entry['amount']
+                    description += f"{index + 1}. {user_name}: ``{amount:,}``\n"
                 embed.description = description
             else:
                 embed.description = "No data found for the specified type."
@@ -790,6 +912,7 @@ class Balance(commands.Cog):
         
         # Update user data in the database
         await database.update_user(self.bot.db, ctx.author.id, balance=new_balance, bank=bank)
+        await self.log_transaction(ctx.author, dep_amount, "Deposit")
         
         # Notify user
         dep_amount_str = f"{dep_amount:,}"
@@ -840,6 +963,7 @@ class Balance(commands.Cog):
         
         # Update user data in the database
         await database.update_user(self.bot.db, ctx.author.id, balance=new_balance, bank=bank)
+        await self.log_transaction(ctx.author, with_amount, "Withdrawal")
         embed.description = f"Withdrew ``{with_amount:,}``"
         await ctx.send(embed=embed)
 
@@ -890,19 +1014,24 @@ class Balance(commands.Cog):
 
     @commands.command(name= "add-money", description="Add money", aliases=["add-funds", "add"])
     @commands.is_owner()
-    async def addmoney(self, ctx: commands.Context, recipient: UserConverter = None, amount: int = None):
+    async def addmoney(self, ctx: commands.Context, recipient: UserConverter = None, amount: int = None, type: str = None):
         if not recipient:
             return await ctx.send("Please specify a user.")
         if not amount:
             return await ctx.send("Please specify an amount to add.")
         if amount <= 0:
             return await ctx.send("To remove money, use ``remove-money``.")
+        if not type:
+            type = "balance"
+        if type not in ["balance", "bank"]:
+            return await ctx.send("Invalid type. Use either ``balance`` or ``bank``.")
         
         
         user_data = await database.get_user(self.bot.db, recipient)
-        new_bal = user_data.get("balance", 0) + amount
-        await database.update_user(self.bot.db, recipient.id, balance=new_bal)
-        await ctx.send(f"{amount} has been added to {recipient.display_name}.")
+        user_amount = user_data.get(type, 0) + amount
+        await database.update_user(self.bot.db, recipient.id, **{type: user_amount})
+        await self.log_transaction(ctx.author, amount, "Add")
+        await ctx.send(f"{amount} has been added to {recipient.display_name}'s {type}.")
         
 
 
@@ -915,6 +1044,7 @@ class Balance(commands.Cog):
         user_data = await database.get_user(self.bot.db, recipient)
         new_bal = 0
         await database.update_user(self.bot.db, recipient.id, balance=new_bal)
+        await self.log_transaction(ctx.author, 0, "Reset")
         await ctx.send(f"User {recipient.display_name}'s balance has been reset to 0")
         
 
@@ -1047,6 +1177,121 @@ class Balance(commands.Cog):
         view = MurderMysteryRoleClaim(self.bot, ctx.author, game_id, message, participants)
         await message.edit(embed=embed, view=view)
 
+    
+
+    @commands.hybrid_command(description="Rob a member")
+    @commands.cooldown(1, ROB_COOLDOWN, commands.BucketType.user)
+    async def rob(self, ctx: commands.Context, user: UserConverter = None):
+        if user == ctx.author:
+            return await ctx.send("You cannot rob yourself.")
+        if not user:
+            return await ctx.send("Please specify a user.")
+        if random.random() < ROB_CHANCE:
+            response = await database.get_failed_rob_response(self.bot.db, user)
+            embed = discord.Embed(color=ctx.author.color)
+            embed.set_author(name=f"Robbery Attempt", icon_url=ctx.author.avatar.url)
+            embed.description = response
+            embed.add_field(name="Amount Lost", value="``0``", inline=False)
+            await ctx.send(embed=embed)
+            return
+        else:
+            user_data = await database.get_user(self.bot.db, user)
+            user_balance = user_data.get("balance", 0)
+            
+            if user_balance <= 0:
+                return await ctx.send(f"{user.display_name} has no money to rob!")
+            max_steal_amount = int(user_balance * 0.8)
+            stolen_amount = random.randint(1, max_steal_amount)
+            new_user_balance = user_balance - stolen_amount
+            await database.update_user(self.bot.db, user.id, balance=new_user_balance)
+            robber_data = await database.get_user(self.bot.db, ctx.author)
+            new_robber_balance = robber_data.get("balance", 0) + stolen_amount
+            await database.update_user(self.bot.db, ctx.author.id, balance=new_robber_balance)
+            await ctx.send("You robbed " + user.mention + "!")
+
+    @commands.group(name="rob-response")
+    @commands.is_owner()
+    async def robresponse(self, ctx: commands.Context):
+        """
+        Robresponse manager, for more info use ``help rob-response <subcommand>``
+        """
+        if ctx.invoked_subcommand is None:
+            return await ctx.send_help(ctx.command)
+
+    @robresponse.command()
+    async def remove(self, ctx: commands.Context, response_id: int = None):
+        """
+        Remove a rob failure response by its ID.
+        Usage:
+        - `robresponse remove <response_id>`: Removes the rob failure response with the specified ID.
+        """
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_author(name=f"Remove Failed Robbery Response", icon_url=ctx.author.avatar.url)
+        if not response_id:
+            await ctx.send_help(ctx.command)
+        result = await database.remove_failed_rob_response(self.bot.db, response_id)
+        if result == False:
+            embed.description = "Failed to remove robbery response."
+            return await ctx.send(embed=embed)
+        embed.description = "Robbery response removed."
+        await ctx.send(embed=embed)
+
+    @robresponse.command()
+    async def list(self, ctx: commands.Context):
+        """
+        List all rob failure responses.
+        Usage:
+        - `robresponse list`: Lists all rob failure responses.
+        """
+        responses = await database.get_failed_rob_responses(self.bot.db)
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_author(name=f"Failed Robbery Responses", icon_url=ctx.author.avatar.url)
+        for i, response in enumerate(responses, start=1):
+            if i > 10:
+                embed.description = f"Showing 10/{len(responses)}"
+                break
+            embed.add_field(name=f"{i}.", value=response, inline=False)
+        await ctx.send(embed=embed)
+    
+    @robresponse.command()
+    async def add(self, ctx: commands.Context, response: str = None):
+        """
+        Add a new rob failure response.
+        Usage:
+        - `robresponse add <response>`: Adds a new rob failure response.
+        """
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_author(name=f"Add Failed Robbery Response", icon_url=ctx.author.avatar)
+        if not response:
+            await ctx.send_help(ctx.command)
+        if len(response) > 250:
+            embed.description = "Response too long. Maximum length is 250 characters."
+            return await ctx.send(embed=embed)
+        if len(response) < 15:
+            embed.description = "Response too short. Minimum length is 15 characters."
+            return await ctx.send(embed=embed)
+        result = await database.add_failed_rob_response(self.bot.db, response)
+        if result == False:
+            embed.description = "Failed to add robbery response."
+            return await ctx.send(embed=embed)
+        embed.description = "Response added."
+        embed.add_field(name="Response", value=response, inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(description="Work for money.")
+    @commands.cooldown(1, WORK_COOLDOWN, commands.BucketType.user)
+    async def work(self, ctx: commands.Context):
+        user_data = await database.get_user(self.bot.db, ctx.author)
+        user_balance = user_data.get("balance", 0)
+        if user_balance <= 0:
+            return await ctx.send("You don't have enough money to work.")
+        earnings = random.randint(MINIMUM_WORK, MAXIMUM_WORK)
+        new_user_balance = user_balance + earnings
+        await database.update_user(self.bot.db, ctx.author.id, balance=new_user_balance)
+        await ctx.send(f"You worked and earned {earnings}!")
+
+        
+            
 
 async def setup(bot):
-    await bot.add_cog(Balance(bot))
+    await bot.add_cog(Economy(bot))

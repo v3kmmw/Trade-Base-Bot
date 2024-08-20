@@ -15,8 +15,7 @@ from utilities import api
 import psutil
 import datetime
 
-print(os.cpu_count())
-if os.cpu_count() == 24:
+if os.cpu_count() > 8:
     token = config.TEST_TOKEN
 else:
     token = config.BOT_TOKEN

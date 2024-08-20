@@ -5,6 +5,7 @@ import json
 from typing import List, Dict, Any
 from discord.ext import commands
 from datetime import datetime
+import random
 bot = discord.AutoShardedClient
 
 async def get_prefix(db: aiosqlite.Connection):
@@ -110,8 +111,6 @@ async def add_user(user_id: int, db: aiosqlite.Connection = None, invited_by: in
                 await cursor.execute(daily_member_insert_query, (user_id, datetime.now()))
                 await db.commit()
                 print(f"User ID {user_id} inserted with default values.")
-        else:
-            print(f"User ID {user_id} already exists.")
     except Exception as e:
         print(f"Error adding user ID {user_id}: {e}")
     finally:
@@ -232,7 +231,6 @@ async def count_message(message: discord.Message):
             await db.execute(insert_query, (message_id, date_sent))
                 
             await db.commit()
-            print(f"Messages count updated and new message inserted for User ID {user_id}")
     except Exception as e:
         print(f"Error updating messages count or inserting message for User ID {user_id}: {e}")
 
@@ -258,7 +256,6 @@ async def count_message_ext(message_id = int, user_id = int, date_sent = str):
             await db.execute(insert_query, (message_id, date_sent))
                 
             await db.commit()
-            print(f"Messages count updated and new message inserted for User ID {user_id}")
     except Exception as e:
         print(f"Error updating messages count or inserting message for User ID {user_id}: {e}")
 
@@ -324,7 +321,60 @@ async def handle_role_check(db: aiosqlite.Connection, user, bot: commands.Bot):
     except Exception as e:
         print(f"Error handling role check for User ID {user.id}: {e}")
         return None
-        
+    
+async def get_failed_rob_response(db: aiosqlite.Connection, user: discord.User) -> str:
+    try:
+        # Fetch all responses from the database
+        async with db.execute("SELECT response FROM failed_rob_responses") as cursor:
+            responses = [row[0] for row in await cursor.fetchall()]
+
+        # Select a random response and format it
+        if responses:
+            response = random.choice(responses)
+            return response.format(user=user.mention)
+        return f"You failed to rob {user.mention}"
+    except Exception as e:
+        print(f"Error fetching failed rob response: {e}")
+        # Return a default message if there's an error
+        return f"You failed to rob {user.mention}"
+
+
+async def get_failed_rob_responses(db: aiosqlite.Connection):
+    try:
+        # Fetch all responses from the database
+        async with db.execute("SELECT response FROM failed_rob_responses") as cursor:
+            responses = [row[0] for row in await cursor.fetchall()]
+
+        return responses
+    except Exception as e:
+        print(f"Error fetching failed rob responses: {e}")
+        return []  # Return an empty list in case of an error
+
+
+async def add_failed_rob_response(db: aiosqlite.Connection, response: str):
+    try:
+        # Insert the new response into the database
+        query = "INSERT INTO failed_rob_responses (response) VALUES (?)"
+        async with db.execute(query, (response,)) as cursor:
+            await db.commit()
+            print(f"Added failed rob response: {response}")
+            return True
+    except Exception as e:
+        print(f"Error adding failed rob response: {e}")
+        return False
+
+    
+async def remove_failed_rob_response(db: aiosqlite.Connection, response_id):
+    try:
+        # Delete the response from the database
+        query = "DELETE FROM failed_rob_responses WHERE id = ?"
+        async with db.execute(query, (response_id,)) as cursor:
+            await db.commit()
+            print(f"Removed failed rob response with ID {response_id}")
+            return True
+    except Exception as e:
+        print(f"Error removing failed rob response with ID {response_id}: {e}")
+        return False
 
 async def update_user(db: aiosqlite.Connection, user_id: int, **kwargs):
     try:
@@ -660,14 +710,25 @@ async def get_daily_members(db: aiosqlite.Connection):
     
 async def get_bal_leaderboard(db: aiosqlite.Connection, type: str):
     try:
-        if type not in ['balance', 'bank']:
+        if type == "total":
+            # Calculate the total money by summing balance and bank for each user
+            query = """
+                SELECT id, (balance + bank) AS total
+                FROM users
+                ORDER BY total DESC
+                LIMIT 100
+            """
+        elif type in ['balance', 'bank']:
+            # Query based on the specified type (balance or bank)
+            query = f"""
+                SELECT id, {type}
+                FROM users
+                ORDER BY {type} DESC
+                LIMIT 100
+            """
+        else:
             return None
-        query = f"""
-            SELECT id, {type}
-            FROM users
-            ORDER BY {type} DESC
-            LIMIT 100
-        """
+        
         async with db.execute(query) as cursor:
             rows = await cursor.fetchall()
         
@@ -676,7 +737,7 @@ async def get_bal_leaderboard(db: aiosqlite.Connection, type: str):
         for row in rows:
             bal_leaderboard.append({
                 'id': row[0],
-                'balance': row[1],
+                'amount': row[1],
             })
         
         return bal_leaderboard

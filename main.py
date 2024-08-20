@@ -16,7 +16,7 @@ from utilities import automod
 import aiomysql
 import json
 import aiofiles
-
+import datetime
 current_timestamp = time.time()
 current_time = time.localtime(current_timestamp)
 
@@ -34,6 +34,14 @@ class ProofView(View):
 async def on_error(ctx, error: commands.CommandError):
     if isinstance(error, commands.CommandNotFound):
         return
+    if isinstance(error, commands.CommandOnCooldown):
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_author(name="Cooldown", icon_url=ctx.author.avatar.url)
+        remaining_time = round(error.retry_after)
+        end_time = datetime.datetime.now() + datetime.timedelta(seconds=remaining_time)
+        end_timestamp = int(end_time.timestamp())
+        embed.description = f"Try again <t:{end_timestamp}:R>."
+        return await ctx.send(embed=embed, delete_after=remaining_time)
     embed = discord.Embed(
         description="There was an error running this command",
         color=ctx.author.color,
