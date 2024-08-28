@@ -13,13 +13,13 @@ class HelpCommand(commands.HelpCommand):
         await channel.send(embed=embed)
 
     async def send_group_help(self, group):
-        embed = discord.Embed(title=f"{group.qualified_name} Commands", description=group.short_doc)
-        command_list = '\n'.join([command.name for command in group.commands])
+        embed = discord.Embed(title=f"{group.help}")
+        command_list = '\n'.join([f"- **{command.name.capitalize()}**" for command in group.commands])
         embed.add_field(name="Subcommands", value=command_list or "No subcommands", inline=False)
         channel = self.get_destination()
         await channel.send(embed=embed)
 
     async def send_command_help(self, command):
-        embed = discord.Embed(title=f"{command.qualified_name}", description=command.help)
+        embed = discord.Embed(description=command.help)
         channel = self.get_destination()
         await channel.send(embed=embed)

@@ -34,8 +34,16 @@ class Prefix(commands.Cog):
     async def stats(self, ctx: commands.Context, prefix: str = None):
         with open("stats.json", "r") as f:
             stats = json.load(f)
+        if not stats:
+            stats['commands_ran'] = 1
         commands_ran = stats.get("commands_ran", 0)
-        await ctx.send("Commands ran: " + str(commands_ran))
+        membercount = await database.get_total_members(self.bot.db)
+        embed = discord.Embed(
+            description=f"- **Total commands ran:** ```{commands_ran}```\n- **Total members (DB):** ```{membercount}```\n- **Total members (Guild):** ```{ctx.guild.member_count}```",
+            color=ctx.author.color
+        )
+        embed.set_author(name=f"Stats | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Prefix(bot))

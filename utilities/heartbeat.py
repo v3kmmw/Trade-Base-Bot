@@ -8,6 +8,8 @@ import logging
 import os
 import sys
 from io import StringIO
+import json, os, signal
+import aiohttp
 app = Flask(__name__)
 bot = None
 

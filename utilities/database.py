@@ -327,7 +327,7 @@ async def get_failed_rob_response(db: aiosqlite.Connection, user: discord.User) 
         # Fetch all responses from the database
         async with db.execute("SELECT response FROM failed_rob_responses") as cursor:
             responses = [row[0] for row in await cursor.fetchall()]
-
+        
         # Select a random response and format it
         if responses:
             response = random.choice(responses)
@@ -692,6 +692,19 @@ async def create_code(db: aiosqlite.Connection, user, amount):
         print(f"Error creating code: {e}")
         await db.rollback()
         return None
+    
+async def get_total_members(db: aiosqlite.Connection):
+    try:
+        query = """
+            SELECT COUNT(*)
+            FROM membercount
+        """
+        async with db.execute(query) as cursor:
+            result = await cursor.fetchone()
+            return result[0]
+    except Exception as e:
+        print(f"Error fetching total members: {e}")
+        return None
 
 
 async def get_daily_members(db: aiosqlite.Connection):
@@ -752,7 +765,7 @@ async def get_top_messagers(db: aiosqlite.Connection):
             SELECT id, username, messages
             FROM users
             ORDER BY messages DESC
-            LIMIT 10
+            LIMIT 10000000
         """
         async with db.execute(query) as cursor:
             rows = await cursor.fetchall()

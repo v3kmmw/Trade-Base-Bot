@@ -82,7 +82,7 @@ class SupportView(View):
             color=interaction.user.color,
         )
         embed.set_author(name=f"Help | {interaction.user.display_name}", icon_url=interaction.user.avatar.url)
-
+        
         for command in self.bot.commands:
             # Check if the command has the is_owner check            
             # Add the command to the embed description

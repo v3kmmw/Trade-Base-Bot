@@ -4,7 +4,10 @@ from discord import app_commands
 from discord.ui import View, Button, Select
 import asyncio
 from utilities import database
-
+import os
+import sys
+import subprocess
+import time
 class ConfirmationView(View):
     def __init__(self, role, ctx):
         super().__init__(timeout=60)  # Timeout after 60 seconds
@@ -93,6 +96,16 @@ class Sync(commands.Cog):
     async def clearchat(self, ctx: commands.Context):
         await ctx.send("_\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n_")
 
+    @commands.command(description="Restart")
+    @commands.is_owner()
+    async def restart(self, ctx: commands.Context):
+        await ctx.send("Restarting...")
+        await self.bot.close()
+        pid = os.getpid()
+        subprocess.Popen([sys.executable] + sys.argv)
+        time.sleep(1)
+        os.system(f"taskkill /PID {pid} /F")
+
     @role.command(description="Add an unlockable role | Owner only")
     @commands.is_owner()
     async def create(self, ctx: commands.Context, name: str = None, color: discord.Color = None, requirement: str = None, requirement_type: str = None):
@@ -119,6 +132,7 @@ class Sync(commands.Cog):
         
         # Optionally delete the message after the interaction
         await message.delete()
+        
     @role.command(description="Claim your roles")
     async def claim(self, ctx: commands.Context):
         embed = discord.Embed(

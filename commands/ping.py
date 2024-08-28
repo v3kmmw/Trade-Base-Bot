@@ -23,8 +23,8 @@ class Ping(commands.Cog):
     @commands.hybrid_command(description="Throw a random error")
     @commands.is_owner()
     async def error(self, ctx: commands.Context):
-        raise ValueError("An error occurred")
         await ctx.send("Error Thrown")
+        raise ValueError("Staff Invoked")
 
 
 async def setup(bot):

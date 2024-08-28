@@ -13,12 +13,14 @@ import aiohttp
 import boto3
 import os
 from botocore.exceptions import NoCredentialsError
+import config
 from flask_cloudflared import run_with_cloudflared
 run_with_cloudflared(app, port=25726)
 R2_ENDPOINT_URL = 'https://12fb2c45fdc4312604cd414c4ab48eae.r2.cloudflarestorage.com'
 R2_BUCKET_NAME = 'database'
 R2_ACCESS_KEY = '9ec17584e4d3e4b1dcea257ad2d7e4c4'
 R2_SECRET_KEY = 'c7f2d50d444e2ee5327518c5b70b768b183cad04ee8dc40047fbe971e5c587f9'
+
 DISCORD_CLIENT_ID = '1264696284795637770'
 DISCORD_CLIENT_SECRET = 'MDF7kNdn8yAyx8slZazhpt6X_0P2ZXsD'
 if os.cpu_count() == 24:
@@ -227,6 +229,23 @@ async def restart():
 @app.route('/<path:filename>')
 async def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+async def shutdown():
+    async with aiohttp.ClientSession() as session:
+        async with session.post('http://127.0.0.1:25726/shutdown') as response:
+            print(await response.text())
+
 
 def start():
     app.run(tunnel_id="4eede4a8-2816-423b-b12b-1b015aa07d64")

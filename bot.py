@@ -14,11 +14,23 @@ import os
 from utilities import api
 import psutil
 import datetime
-
+import threading
 if os.cpu_count() > 8:
     token = config.TEST_TOKEN
 else:
     token = config.BOT_TOKEN
+
+def start_api():
+    from utilities import api
+    api.start()
+
+def start_control_panel():
+    from utilities import control
+    control.start()
+
+def start_heartbeat():
+    from utilities import heartbeat
+    heartbeat.start()
 
 class Bot(commands.AutoShardedBot):
     db: aiosqlite.Connection
@@ -54,6 +66,16 @@ class Bot(commands.AutoShardedBot):
         await self.change_presence(activity=activity)
         from main import script_started_at_str
         await channel.send(f"Bot started\nServer uptime: {formatted_uptime}\nScript started at: {script_started_at_str}")
+        api_thread = threading.Thread(target=start_api)
+        api_thread.start()
+
+    # Start the heartbeat server in another separate thread
+        heartbeat_thread = threading.Thread(target=start_heartbeat)
+        heartbeat_thread.start()
+
+    # Start the control panel in a separate thread
+        control_panel_thread = threading.Thread(target=start_control_panel)
+        control_panel_thread.start()
         control.bot = self
         api.bot = self
         database.bot = self

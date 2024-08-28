@@ -131,6 +131,7 @@ class Scammer(commands.Cog):
             return
 
         proof = report.get('proof', [])
+        print(proof)
         cleaned_proof = [url.strip().strip('[]').strip('"') for url in proof if isinstance(url, str)]
 
         embeds = message.embeds
@@ -223,30 +224,33 @@ class Scammer(commands.Cog):
 
     @commands.hybrid_group()
     async def scammer(self, ctx: commands.Context):
-        usage_embed = discord.Embed(
-            title="Scammer Command Usage",
-            description=(
-                "``scammer <action> <scammer>``\n\n"
-                "**Actions:**\n"
-                "`help`: Show this help message\n"
-                "`report <scammer>`: Report a scammer\n"
-                "`search <scammer>`: Search for a scammer\n"
-                "`delete <scammer>`: Delete a scammer report"
-            ),
-            color=ctx.author.color,
-        )
-        usage_embed.set_footer(text="<> = Required | [] = Optional")
-        usage_embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
-        await ctx.send(embed=usage_embed)
+        """Usage: ``scammer <action> <scammer>``
+        Report or search for a scammer.
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+            return
+        
 
     @scammer.command()
     async def help(self, ctx: commands.Context):
-        await self.scammer(ctx)
+        """### Usage: ``scammer <action> <scammer>``
+        Report or search for a scammer.\n
+        **Actions:**
+        - ``help``: Show this help message
+        - ``report <scammer>``: Report a scammer
+        - ``search <query_type> <query>``: Search for a scammer
+        - ``delete <code>``: Delete a scammer report (Staff)
+        """
+        await ctx.send_help(ctx.command)
 
     @scammer.command()
-    async def report(self, ctx: commands.Context, scammer: str):
+    async def report(self, ctx: commands.Context, scammer: str = None):
+        """### Usage: ``scammer report <scammer>``
+        Report a scammer.
+        """
         if not scammer:
-            await ctx.send("Please specify a valid scammer.")
+            await ctx.send_help(ctx.command)
             return
         proof_code = shortuuid.ShortUUID().random(length=12)  # Generate a unique report code
 
@@ -279,11 +283,20 @@ class Scammer(commands.Cog):
 
     @scammer.command()
     async def search(self, ctx: commands.Context, search_by: str = None, search: str = None):
+        """### Usage: ``scammer search <query_type> <query>``
+        Search for scammer reports based on code or name.\n
+        **Available filters:**
+        - ``code``
+        - ``name``
+
+        """
         embed = discord.Embed(
             description=None,
             color=ctx.author.color
         )
         embed.set_author(name=f"Scammer search | {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        if not search_by or not search:
+            return await ctx.send_help(ctx.command)
         if search_by not in ["code", "name"]:
             embed.description = "**Invalid filter type**\n Choose between ``code`` or ``name``"
             await ctx.send(embed=embed)
@@ -340,6 +353,9 @@ class Scammer(commands.Cog):
             embed.set_footer(text="Please wait...", icon_url="https://cdn.discordapp.com/attachments/1263603660261429511/1264337093820154019/Rolling1x-1.0s-200px-200px.gif?ex=669d812d&is=669c2fad&hm=4457abe52511b8120f0d3eff113a6dee1c1ef64a35d65179d175988b45a3f9f1&")
             await message.edit(embed=embed)
             await asyncio.sleep(2)
+            embed.description = "This isnt complete, sorry!"
+            embed.set_footer(text=None, icon_url=None)
+            await message.edit(embed=embed)
 
     @scammer.command(with_app_command=False)
     @commands.is_owner()

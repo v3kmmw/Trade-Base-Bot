@@ -34,6 +34,8 @@ class ProofView(View):
 async def on_error(ctx, error: commands.CommandError):
     if isinstance(error, commands.CommandNotFound):
         return
+    if isinstance(error, commands.NotOwner):
+        return await ctx.send(f"This is an owner only command!", delete_after=5)
     if isinstance(error, commands.CommandOnCooldown):
         embed = discord.Embed(color=ctx.author.color)
         embed.set_author(name="Cooldown", icon_url=ctx.author.avatar.url)
@@ -46,7 +48,7 @@ async def on_error(ctx, error: commands.CommandError):
         description="There was an error running this command",
         color=ctx.author.color,
     )
-    embed.set_footer(text="If you are an administrator, check the logs for more information")
+    embed.set_footer(text="This error has been logged.")
     embed.set_author(name=f"Error | {ctx.author.display_name}")
     await ctx.send(embed=embed, delete_after=2)
     error_channel = ctx.channel
@@ -69,6 +71,9 @@ async def on_error(ctx, error: commands.CommandError):
 async def on_message(message):
     if message.author.bot:
         return
+    if message.content == f"{bot.user.mention}":
+        prefix = await database.get_prefix(bot.db)
+        await message.channel.send(f"Hello {message.author.mention}.\nFor more commands, use {prefix}commands.", delete_after=5)
     await database.add_user(message.author.id, None, None)
     await automod.check_message(message)
     await database.count_message(message)
@@ -92,30 +97,7 @@ async def run_bot():
     bot.on_command_error = on_error
     await bot.start()
 
-def start_api():
-    from utilities import api
-    api.start()
-
-def start_control_panel():
-    from utilities import control
-    control.start()
-
-def start_heartbeat():
-    from utilities import heartbeat
-    heartbeat.start()
-
 if __name__ == "__main__":
-    # Start the API server in a separate thread
-    api_thread = threading.Thread(target=start_api)
-    api_thread.start()
-
-    # Start the heartbeat server in another separate thread
-    heartbeat_thread = threading.Thread(target=start_heartbeat)
-    heartbeat_thread.start()
-
-    # Start the control panel in a separate thread
-    control_panel_thread = threading.Thread(target=start_control_panel)
-    control_panel_thread.start()
 
     # Run the bot in the main thread
     asyncio.run(run_bot())
